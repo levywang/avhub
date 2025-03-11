@@ -61,11 +61,11 @@ const API_CONFIG = {
 
 async function searchMagnet() {
 
-    const input = document.getElementById('searchInput').value.replace(/\s+/g, '');
+    const input = document.getElementById('searchInput');
 
     const resultsDiv = document.getElementById('searchResults');
 
-    const searchTerm = input.value.trim();
+    const searchTerm = input.value.replace(/\s+/g, '').trim();
 
     const notification = document.getElementById('notification');
 

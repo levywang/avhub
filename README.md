@@ -47,7 +47,7 @@ cd avhub
 pip install -r requirements.txt  
 python main.py  
 ```  
-The default API address: `http://127.0.0.1:8000/`  
+The default API address: `https://api.wwlww.org/`  
 
 You can configure a reverse proxy and domain, replacing `BASE_URL` in line 52 of `web/script.js`.  
 

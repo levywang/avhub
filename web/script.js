@@ -71,7 +71,7 @@ async function searchMagnet() {
 
     const container = document.getElementById('coverImageContainer');
 
-    const regex = /^[A-Za-z][\w\s]*\d$/;
+    const regex = /^[a-zA-Z][a-zA-Z0-9-]*\d$/;
 
     if (!searchTerm || !regex.test(searchTerm)) {
 

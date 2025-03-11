@@ -61,7 +61,7 @@ const API_CONFIG = {
 
 async function searchMagnet() {
 
-    const input = document.getElementById('searchInput');
+    const input = document.getElementById('searchInput').value.replace(/\s+/g, '');
 
     const resultsDiv = document.getElementById('searchResults');
 
@@ -71,7 +71,7 @@ async function searchMagnet() {
 
     const container = document.getElementById('coverImageContainer');
 
-    const regex = /^[a-zA-Z][a-zA-Z0-9-]*\d$/;
+    const regex = /^[A-Za-z][\w\s]*\d$/;
 
     if (!searchTerm || !regex.test(searchTerm)) {
 

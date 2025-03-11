@@ -1,3 +1,7 @@
+<div align="center">
+      <img src="web\imgs\logo_opaque.png" alt="FTP Web Client Logo">
+</div>
+
 # AvHub - Adult Video Resource Management Platform  
 
 **AvHub** is a web platform dedicated to the retrieval and management of adult video resources.  
@@ -21,6 +25,8 @@ Vercel Page: https://avhub.vercel.app/
 ## Star History  
 
 [![Star History Chart](https://api.star-history.com/svg?repos=levywang/avhub&type=Date)](https://star-history.com/#levywang/avhub&Date)  
+
+[English](README.md) | [简体中文](README_CN.md)   
 
 ---
 
@@ -64,20 +70,20 @@ docker run -d -p <your_server_port>:80 -v $PWD:/app --name avhub levywang/avhub:
 ---
 
 ### **Technology Stack**  
-• **Frontend**:  
-  • Built with **Tailwind CSS** for a modern, responsive interface.  
-  • Integrated with **hls.js** for smooth video playback.  
-• **Backend**:  
-  • Developed using **FastAPI**, a Python framework, to provide efficient and stable API services.  
-• **Privacy Protection**:  
-  • Strictly adheres to privacy principles and does not directly host any resource files. All data is retrieved through third-party links.  
+- **Frontend**:  
+  - Built with **Tailwind CSS** for a modern, responsive interface.  
+  - Integrated with **hls.js** for smooth video playback.  
+- **Backend**:  
+  - Developed using **FastAPI**, a Python framework, to provide efficient and stable API services.  
+- **Privacy Protection**:  
+  - Strictly adheres to privacy principles and does not directly host any resource files. All data is retrieved through third-party links.  
 
 ---
 
 ### **Data Sources**  
-• **Magnet Links and Cover Images**: Sourced from **missav**.  
-• **Hentai Resources**: Sourced from **hacg liuli**.  
-• **Random Video Recommendations**: Sourced from crawled data stored in the local file `/data/video_urls.txt`.  
+- **Magnet Links and Cover Images**: Sourced from **missav**.  
+- **Hentai Resources**: Sourced from **hacg liuli**.  
+- **Random Video Recommendations**: Sourced from crawled data stored in the local file `/data/video_urls.txt`.  
 
 The above data sources are configured in `data/config.yaml`. If the data sources change or become inaccessible, modifications and maintenance are required.  
 

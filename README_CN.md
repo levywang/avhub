@@ -1,3 +1,7 @@
+<div align="center">
+      <img src="web\imgs\logo_opaque.png" alt="FTP Web Client Logo">
+</div>
+
 # AvHub - 成人影视资源管理平台
 
 **AvHub** 是一款专注成人影视资源检索与管理的Web平台
@@ -21,7 +25,9 @@ Vercel Page: https://avhub.vercel.app/
     
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=levywang/avhub&type=Date)](https://star-history.com/#levywang/avhub&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=levywang/avhub&type=Date)](https://star-history.com/#levywang/avhub&Date)  
+
+[English](README.md) | [简体中文](README_CN.md) 
 
 ---
 

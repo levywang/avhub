@@ -5,7 +5,7 @@ WORKDIR /app
 
 # 安装依赖
 RUN apt-get update && apt-get install -y --no-install-recommends nginx
-RUN pip install  --no-cache-dir beautifulsoup4 fastapi requests uvicorn hydra-core curl_cffi
+RUN pip install  --no-cache-dir beautifulsoup4 fastapi requests uvicorn hydra-core curl_cffi schedule
 
 # 复制应用代码
 COPY . /app

@@ -66,6 +66,17 @@ git clone https://github.com/levywang/avhub.git
 cd avhub  
 docker run -d -p <your_server_port>:80 -v $PWD:/app --name avhub levywang/avhub:latest  
 ```  
+---
+
+### **Configuration Instructions**  
+
+If you deploy the project on a server within China, the source site `missav` is blocked, so you need to configure a proxy server in `config.yaml`. Edit the `/data/config.yaml` file and modify it as follows:  
+```yaml
+av_spider:
+  source_url: "https://missav.ai/cn/search/"
+  proxy_url: "http://192.168.50.3:7890" # HTTP or SOCKS5 proxy
+  use_proxy: true
+```
 
 ---
 
@@ -82,7 +93,7 @@ docker run -d -p <your_server_port>:80 -v $PWD:/app --name avhub levywang/avhub:
 
 ### **Data Sources**  
 - **Magnet Links and Cover Images**: Sourced from **missav**.  
-- **Hentai Resources**: Sourced from **hacg liuli**.  
+- **Hacg Resources**: Sourced from **hacg liuli**.  
 - **Random Video Recommendations**: Sourced from crawled data stored in the local file `/data/video_urls.txt`.  
 
 The above data sources are configured in `/data/config.yaml`. If the data sources change or become inaccessible, modifications and maintenance are required.  

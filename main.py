@@ -120,7 +120,7 @@ def main(cfg: DictConfig):
             logger.info("Random video URL and image URL fetched successfully")
             return {
                 "url": video_url,
-                "img_url": img_url or ""  # 如果没有找到图片，使用默认图片
+                "img_url": img_url or ""
             }
         except Exception as e:
             logger.error(f"Failed to fetch random video URL: {str(e)}")

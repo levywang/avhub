@@ -68,6 +68,17 @@ git clone https://github.com/levywang/avhub.git
 cd avhub
 docker run -d -p <your_server_port>:80 -v $PWD:/app --name avhub levywang/avhub:latest
 ```
+---
+
+### 配置说明
+
+如果您将项目部署在中国境内的服务器上，由于源站 `missav` 被屏蔽，需要在 `config.yaml` 中配置代理服务器。请编辑 `/data/config.yaml` 文件，修改示例如下：  
+```yaml
+av_spider:
+  source_url: "https://missav.ai/cn/search/"
+  proxy_url: "http://192.168.50.3:7890" # HTTP 或 SOCKS5 代理
+  use_proxy: true
+```
 
 ---
 

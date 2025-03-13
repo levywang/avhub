@@ -1329,37 +1329,76 @@ async function loadCollections() {
 function copyToClipboard(text) {
     const notification = document.getElementById('notification');
     
-    navigator.clipboard.writeText(text).then(() => {
-        // 成功复制通知
-        notification.innerHTML = `
+    // 显示通知的辅助函数
+    const showNotification = (success) => {
+        notification.innerHTML = success ? `
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
             </svg>
             <span>${translations[currentLang].copySuccess}</span>
-        `;
-        notification.style.setProperty('background', '#1bb76e');
-        notification.classList.add('show');
-        
-        setTimeout(() => {
-            notification.classList.remove('show');
-            notification.style.background = ''; // 重置背景色为默认值
-        }, 3000);
-    }).catch(err => {
-        // 复制失败通知
-        notification.innerHTML = `
+        ` : `
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
             <span>${translations[currentLang].copyError}</span>
         `;
-        notification.style.background = '#dc2626';
+        
+        notification.style.background = success ? '#1bb76e' : '#dc2626';
         notification.classList.add('show');
         
         setTimeout(() => {
             notification.classList.remove('show');
             notification.style.background = '';
         }, 3000);
-    });
+    };
+
+    // 尝试使用 Clipboard API
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text)
+            .then(() => showNotification(true))
+            .catch(() => {
+                // 如果 Clipboard API 失败，回退到 execCommand 方法
+                fallbackCopyToClipboard(text);
+            });
+    } else {
+        // 在非安全上下文中直接使用 execCommand 方法
+        fallbackCopyToClipboard(text);
+    }
+
+    // execCommand 复制方法
+    function fallbackCopyToClipboard(text) {
+        try {
+            // 创建临时文本区域
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            
+            // 设置样式使其不可见
+            textArea.style.position = 'fixed';
+            textArea.style.top = '0';
+            textArea.style.left = '0';
+            textArea.style.width = '2em';
+            textArea.style.height = '2em';
+            textArea.style.padding = '0';
+            textArea.style.border = 'none';
+            textArea.style.outline = 'none';
+            textArea.style.boxShadow = 'none';
+            textArea.style.background = 'transparent';
+            textArea.style.opacity = '0';
+            
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            // 尝试执行复制命令
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            showNotification(successful);
+        } catch (err) {
+            console.error('复制失败:', err);
+            showNotification(false);
+        }
+    }
 }
 
 // 修改排序下拉菜单

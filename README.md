@@ -2,7 +2,7 @@
       <img src="web\imgs\logo_opaque.png" alt="FTP Web Client Logo">
 </div>
 
-# AvHub - Adult Video Resource Management Platform  
+# AvHub - R18 Resource Search & Management Tool 
 
 **AvHub** is a web platform dedicated to the retrieval and management of adult video resources.  
 
@@ -12,7 +12,7 @@ Vercel Page: https://avhub.vercel.app/
 
 ****
 
-[![GitHub license](https://img.shields.io/github/license/levywang/avhub?label=License&logo=github)](https://github.com/levywang/avhub "Click to view the repo on Github")
+[![GitHub license](https://img.shields.io/github/license/levywang/avhub?label=License&logo=github)](https://github.com/levywang/avhub/blob/main/LICENSE "Click to view the repo on Github")
 [![Release Version](https://img.shields.io/github/release/levywang/avhub?include_prereleases&label=Release&logo=github)](https://github.com/levywang/avhub/releases/latest "Click to view the repo on Github")
 [![GitHub Star](https://img.shields.io/github/stars/levywang/avhub?label=Stars&logo=github)](https://github.com/levywang/avhub "Click to view the repo on Github")
 [![GitHub Fork](https://img.shields.io/github/forks/levywang/avhub?label=Forks&logo=github)](https://github.com/levywang/avhub/forks?include=active%2Carchived%2Cinactive%2Cnetwork&page=1&period=2y&sort_by=stargazer_counts "Click to view the repo on Github")
@@ -33,8 +33,8 @@ Vercel Page: https://avhub.vercel.app/
 ### **Core Features**  
 ● 🔗 **Magnet Link Search by Video Code**  
   &emsp;Accurately find magnet links and cover images corresponding to video codes.  
-● 📅 **Timely Hentai Resource Updates**  
-  &emsp;Automatically update and archive monthly hentai resources.  
+● 📅 **Timely Hacg Resource Updates**  
+  &emsp;Automatically update and archive monthly hacg resources.  
 ● 📊 **Random Video Recommendation**  
   &emsp;Random playback functionality based on crawled data.  
 ● 🌐 **Multi-language Support**  
@@ -85,7 +85,7 @@ docker run -d -p <your_server_port>:80 -v $PWD:/app --name avhub levywang/avhub:
 - **Hentai Resources**: Sourced from **hacg liuli**.  
 - **Random Video Recommendations**: Sourced from crawled data stored in the local file `/data/video_urls.txt`.  
 
-The above data sources are configured in `data/config.yaml`. If the data sources change or become inaccessible, modifications and maintenance are required.  
+The above data sources are configured in `/data/config.yaml`. If the data sources change or become inaccessible, modifications and maintenance are required.  
 
 ---
 

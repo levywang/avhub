@@ -90,7 +90,14 @@
             </div>
 
             <!-- 排序选项 -->
-            <div class="max-w-4xl mx-auto mb-4 flex justify-end">
+            <div class="max-w-4xl mx-auto mb-4 flex justify-between items-center">
+                <div class="cover-toggle flex items-center">
+                    <input type="checkbox" id="coverToggle" class="hidden" checked>
+                    <label for="coverToggle" class="cursor-pointer flex items-center">
+                        <span class="toggle-switch"></span>
+                        <span class="ml-2 tab-text" data-zh="显示封面" data-en="Show Cover">显示封面</span>
+                    </label>
+                </div>
                 <button id="sortButton" class="settings-button theme-toggle" onclick="showSortMenu(this)" value="date-desc">
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zM3 7a1 1 0 000 2h7a1 1 0 100-2H3zM3 11a1 1 0 100 2h4a1 1 0 100-2H3z"/>

@@ -1412,3 +1412,52 @@ body.light-theme select option {
 [data-theme="light"] .collection-description {
     color: #6b7280;
 }
+
+/* 封面图开关样式 */
+.cover-toggle {
+    display: flex;
+    align-items: center;
+}
+
+.cover-toggle .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    background-color: #ccc;
+    border-radius: 12px;
+    transition: all 0.3s;
+}
+
+.cover-toggle .toggle-switch::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: white;
+    top: 2px;
+    left: 2px;
+    transition: all 0.3s;
+}
+
+#coverToggle:checked + label .toggle-switch {
+    background-color: var(--primary-color);
+}
+
+#coverToggle:checked + label .toggle-switch::after {
+    transform: translateX(20px);
+}
+
+/* 浅色主题下的封面图开关样式 */
+[data-theme="light"] .cover-toggle label {
+    color: #1f2937;
+}
+
+[data-theme="light"] .cover-toggle .toggle-switch {
+    background-color: #d1d5db;
+}
+
+[data-theme="light"] #coverToggle:checked + label .toggle-switch {
+    background-color: var(--primary-color);
+}

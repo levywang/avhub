@@ -1,51 +1,37 @@
 // Tab切换功能
 
+// 添加全局变量
+let currentTab = 'search'; // 默认标签页
+
 function switchTab(tabName) {
-
-    // 更新按钮状态
-
-    document.querySelectorAll('.tab-button').forEach(button => {
-
+    // 更新当前标签页
+    currentTab = tabName;
+    
+    // 获取所有标签页内容和按钮
+    const tabs = document.querySelectorAll('.tab-content');
+    const buttons = document.querySelectorAll('.tab-button');
+    
+    // 隐藏所有标签页内容
+    tabs.forEach(tab => {
+        tab.classList.add('hidden');
+    });
+    
+    // 移除所有按钮的激活状态
+    buttons.forEach(button => {
         button.classList.remove('active');
-
-        if (button.dataset.tab === tabName) {
-
-            button.classList.add('active');
-
-        }
-
     });
-
-
-
-    // 更新内容显示
-
-    document.querySelectorAll('.tab-content').forEach(content => {
-
-        content.classList.add('hidden');
-
-    });
-
+    
+    // 显示选中的标签页内容
     document.getElementById(`${tabName}Tab`).classList.remove('hidden');
-
-
-
-    // 如果切换到合集标签页，且还没有加载过数据，则加载数据
-
-    if (tabName === 'collections' && !document.getElementById('collectionList').children.length) {
-
-        loadCollections();
-
-    }
-
-    // 如果切换到视频播放标签页，则加载视频
+    
+    // 激活对应的按钮
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    
+    // 如果切换到播放器标签页，加载视频
     if (tabName === 'player') {
         loadVideo();
     }
-
 }
-
-
 
 // 添加 API 配置
 const API_CONFIG = {
@@ -206,25 +192,23 @@ async function searchMagnet() {
 // 显示搜索结果
 
 function displaySearchResults(results) {
-
-    const resultsDiv = document.getElementById('searchResults');
-
-    if (!results || !results.length) {
-
-        resultsDiv.innerHTML = `<p class="text-center text-inherit opacity-75">${translations[currentLang].noResults}</p>`;
-
-        // 没有搜索结果时隐藏图片
-
-        const container = document.getElementById('coverImageContainer');
-
-        if (container) {
-
-            container.classList.add('hidden');
-
+    const searchResults = document.getElementById('searchResults');
+    const coverToggle = document.getElementById('coverToggle');
+    
+    // 如果开关是关闭状态，确保移除已存在的封面图容器
+    if (!coverToggle.checked) {
+        const existingCoverContainer = document.getElementById('coverImageContainer');
+        if (existingCoverContainer) {
+            existingCoverContainer.remove();
         }
+    }
 
+    // 清空搜索结果
+    searchResults.innerHTML = '';
+
+    if (results.length === 0) {
+        searchResults.innerHTML = '<div class="text-center py-4">未找到相关结果</div>';
         return;
-
     }
 
     const html = results.map(([magnet, title, size, date]) => {
@@ -243,7 +227,7 @@ function displaySearchResults(results) {
 
                 <div class="flex flex-col gap-4">
 
-                    <h3 class="font-medium text-inherit break-all">${title}</h3>
+                    <h3 class="font-medium text-inherit break-all"><a rel="nofollow" href="${magnet}" target="_blank" onclick="return false;">${title}</a></h3>
 
                     <div class="flex flex-wrap gap-2">
 
@@ -273,59 +257,67 @@ function displaySearchResults(results) {
 
     }).join('');
 
-    resultsDiv.innerHTML = html;
-
+    searchResults.innerHTML = html;
 }
 
-// 处理番号格式并显示封面图片
-
+// 显示封面图
 function showCoverImage(searchTerm) {
+    const coverToggle = document.getElementById('coverToggle');
+    // 如果开关是关闭状态，直接返回
+    if (!coverToggle.checked) {
+        return;
+    }
 
-    const container = document.getElementById('coverImageContainer');
-
-    const image = document.getElementById('coverImage');
+    // 获取或创建封面图容器
+    let coverImageContainer = document.getElementById('coverImageContainer');
+    let image = document.getElementById('coverImage');
+    
+    // 如果容器不存在，创建容器和图片元素
+    if (!coverImageContainer) {
+        coverImageContainer = document.createElement('div');
+        coverImageContainer.id = 'coverImageContainer';
+        coverImageContainer.className = 'cover-image-container hidden';
+        
+        // 创建图片元素
+        image = document.createElement('img');
+        image.id = 'coverImage';
+        image.className = 'cover-image';
+        image.alt = '封面图片';
+        
+        // 将图片添加到容器中
+        coverImageContainer.appendChild(image);
+        
+        // 将容器添加到搜索结果之前
+        document.getElementById('searchResults').insertAdjacentElement('beforebegin', coverImageContainer);
+    }
 
     const modal = document.getElementById('imageModal');
-
     const modalImage = document.getElementById('modalImage');
 
     // 如果搜索词为空，隐藏图片
-
     if (!searchTerm) {
-
-        container.classList.add('hidden');
-
+        coverImageContainer.classList.add('hidden');
         return;
-
     }
 
     // 正则表达式匹配番号格式
-
     const avMatch = searchTerm.match(/([a-zA-Z]+)[-]?(\d+)/i);
-
     if (avMatch) {
-
         // 提取番号的字母和数字部分
-
         const prefix = avMatch[1].toLowerCase();
-
         const number = avMatch[2].padStart(3, '0'); // 确保数字部分至少有3位
 
         // 构建标准格式的番号 (例如: ipx-096)
-
         const formattedAV = `${prefix}-${number}`;
 
         // 构建图片URL
-
         const imageUrl = `https://fourhoi.com/${formattedAV}/cover-n.jpg`;
 
         // 设置图片源并显示容器
-
         image.src = imageUrl;
 
-        container.style.opacity = '0';
-
-        container.classList.remove('hidden');
+        coverImageContainer.style.opacity = '0';
+        coverImageContainer.classList.remove('hidden');
         
         // 移除之前的 loaded 类
         image.classList.remove('loaded');
@@ -333,41 +325,29 @@ function showCoverImage(searchTerm) {
         // 处理图片加载完成
         image.onload = () => {
             requestAnimationFrame(() => {
-                container.style.transition = 'opacity 0.3s ease';
-                container.style.opacity = '1';
+                coverImageContainer.style.transition = 'opacity 0.3s ease';
+                coverImageContainer.style.opacity = '1';
                 image.classList.add('loaded');
             });
         };
 
         // 处理图片加载错误
         image.onerror = () => {
-            container.classList.add('hidden');
+            coverImageContainer.classList.add('hidden');
         };
 
         // 点击图片显示大图
-
-        container.onclick = () => {
-
+        coverImageContainer.onclick = () => {
             modalImage.src = imageUrl;
-
             modal.classList.remove('hidden');
-
             setTimeout(() => {
-
                 modal.classList.add('active');
-
             }, 10);
-
         };
-
     } else {
-
         // 如果不是番号格式，隐藏图片容器
-
-        container.classList.add('hidden');
-
+        coverImageContainer.classList.add('hidden');
     }
-
 }
 
 // 视频播放功能
@@ -390,10 +370,43 @@ function initializeAutoplaySettings() {
     }
 }
 
+// 初始化封面图开关设置
+function initializeCoverToggle() {
+    const coverToggle = document.getElementById('coverToggle');
+    
+    // 从localStorage读取设置
+    const showCover = localStorage.getItem('showCover') !== 'false';
+    coverToggle.checked = showCover;
+
+    // 监听开关变化
+    coverToggle.addEventListener('change', function() {
+        localStorage.setItem('showCover', this.checked);
+        
+        // 如果在搜索页面，重新触发搜索以更新显示
+        if (currentTab === 'search') {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput.value.trim()) {
+                searchMagnet(); // 重新触发搜索
+            } else {
+                // 如果没有搜索内容，只需要处理封面图容器
+                const existingCoverContainer = document.getElementById('coverImageContainer');
+                if (existingCoverContainer) {
+                    existingCoverContainer.remove();
+                }
+            }
+        }
+        // 如果在视频播放页面，重新加载视频以更新封面图
+        else if (currentTab === 'player') {
+            loadVideo();
+        }
+    });
+}
+
 async function loadVideo() {
     const videoPlayer = document.getElementById('videoPlayer');
     const notification = document.getElementById('notification');
     const sourceUrlElement = document.getElementById('videoSourceUrl');
+    const showCover = document.getElementById('coverToggle').checked;
 
     try {
         // 添加加载中状态
@@ -428,8 +441,12 @@ async function loadVideo() {
             hls = null;
         }
 
-        // 设置视频封面
-        videoPlayer.poster = data.img_url;
+        // 设置视频封面（如果开启了封面图显示）
+        if (showCover && data.img_url) {
+            videoPlayer.poster = data.img_url;
+        } else {
+            videoPlayer.poster = ''; // 清除封面图
+        }
 
         // 更新视频源地址显示
         sourceUrlElement.textContent = data.url;
@@ -499,6 +516,7 @@ async function loadVideo() {
 document.addEventListener('DOMContentLoaded', () => {
     initializeAutoplaySettings();
     initializeCopyButton();
+    initializeCoverToggle();
     
     const nextVideoButton = document.getElementById('nextVideo');
     if (nextVideoButton) {
@@ -1011,14 +1029,16 @@ function setLanguage(lang) {
     // }
 
     // 更新所有带有 data-zh 和 data-en 属性的元素
-    document.querySelectorAll('[data-zh][data-en]').forEach(el => {
-        el.textContent = el.getAttribute(`data-${lang}`);
+    document.querySelectorAll('[data-zh][data-en]').forEach(element => {
+        element.textContent = lang === 'zh' ? element.getAttribute('data-zh') : element.getAttribute('data-en');
     });
 
     // 更新搜索框占位符
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
-        searchInput.placeholder = searchInput.getAttribute(`data-${lang}-placeholder`);
+        searchInput.placeholder = lang === 'zh' ? 
+            searchInput.getAttribute('data-zh-placeholder') : 
+            searchInput.getAttribute('data-en-placeholder');
     }
 
     // 更新排序按钮文本
@@ -1228,7 +1248,7 @@ function displayCollections(collections) {
             collectionItem.className = 'magnet-item p-6 rounded-xl';
             collectionItem.innerHTML = `
                 <div class="flex flex-col gap-4">
-                    <h3 class="font-medium text-inherit break-all">${collection.title}</h3>
+                    <h3 class="font-medium text-inherit break-all"><a rel="nofollow" href="${collection.link}" target="_blank" onclick="return false;">${collection.title}</a></h3>
                     <button onclick="copyToClipboard('${collection.link}')" 
                             class="copy-button w-full px-4 py-2 rounded-lg text-sm font-medium text-white">
                         ${translations[currentLang].copyButton}
@@ -1244,7 +1264,7 @@ function displayCollections(collections) {
             collectionItem.className = 'magnet-item p-6 rounded-xl';
             collectionItem.innerHTML = `
                 <div class="flex flex-col gap-4">
-                    <h3 class="font-medium text-inherit break-all">${title}</h3>
+                    <h3 class="font-medium text-inherit break-all"><a rel="nofollow" href="${link}" target="_blank" onclick="return false;">${title}</a></h3>
                     <button onclick="copyToClipboard('${link}')" 
                             class="copy-button w-full px-4 py-2 rounded-lg text-sm font-medium text-white">
                         ${translations[currentLang].copyButton}

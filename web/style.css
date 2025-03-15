@@ -1461,3 +1461,32 @@ body.light-theme select option {
 [data-theme="light"] #coverToggle:checked + label .toggle-switch {
     background-color: var(--primary-color);
 }
+
+/* Footer 样式 */
+footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: var(--card-dark);
+    border-top: 1px solid var(--border-color);
+    z-index: 30;
+    padding: 1rem 0;
+}
+
+/* 为主要内容添加底部内边距，防止被 footer 遮挡 */
+main {
+    padding-bottom: 80px;
+}
+
+/* 亮色主题下的 footer 样式 */
+[data-theme="light"] footer {
+    background: #ffffff;
+    border-color: #e5e7eb;
+}
+
+/* 确保返回顶部按钮在 footer 上方 */
+.back-to-top {
+    z-index: 50;
+    margin-bottom: 60px;
+}

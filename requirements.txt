@@ -1,6 +1,10 @@
+aiohappyeyeballs==2.6.1
+aiohttp==3.11.13
+aiosignal==1.3.2
 annotated-types==0.7.0
 antlr4-python3-runtime==4.9.3
 anyio==4.8.0
+attrs==25.3.0
 beautifulsoup4==4.13.3
 certifi==2025.1.31
 cffi==1.17.1
@@ -8,11 +12,14 @@ charset-normalizer==3.4.1
 click==8.1.8
 curl_cffi==0.9.0
 fastapi==0.115.11
+frozenlist==1.5.0
 h11==0.14.0
 hydra-core==1.3.2
 idna==3.10
+multidict==6.1.0
 omegaconf==2.3.0
 packaging==24.2
+propcache==0.3.0
 pycparser==2.22
 pydantic==2.10.6
 pydantic_core==2.27.2
@@ -25,3 +32,4 @@ starlette==0.46.1
 typing_extensions==4.12.2
 urllib3==2.3.0
 uvicorn==0.34.0
+yarl==1.18.3

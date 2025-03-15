@@ -46,147 +46,82 @@ const API_CONFIG = {
 // 搜索磁力链接
 
 async function searchMagnet() {
-
     const input = document.getElementById('searchInput');
-
     const resultsDiv = document.getElementById('searchResults');
-
     const searchTerm = input.value.replace(/\s+/g, '').trim();
-
     const notification = document.getElementById('notification');
-
     const container = document.getElementById('coverImageContainer');
-
     const regex = /^[A-Za-z][\w\s-]*\d$/;
 
     if (!searchTerm || !regex.test(searchTerm)) {
-
-        // 空搜索警告通知
-
         notification.innerHTML = `
-
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-
             </svg>
-
             <span>${translations[currentLang].emptySearchWarning}</span>
-
         `;
-
-        notification.style.background = '#dc2626'; // 红色背景
-
+        notification.style.background = '#dc2626';
         notification.classList.add('show');
-
         if (container) {
-
             container.classList.add('hidden');
-
         }
-
         setTimeout(() => {
-
             notification.classList.remove('show');
-
-            notification.style.background = ''; // 重置背景色为默认值
-
+            notification.style.background = '';
         }, 3000);
-
         return;
-
     }
-
-    // 隐藏之前的图片和搜索结果
 
     if (container) {
-
         container.classList.add('hidden');
-
         container.style.opacity = '0';
-
     }
-
     resultsDiv.innerHTML = '';
 
-    // 显示加载动画
-
     const loadingTemplate = document.getElementById('loadingTemplate');
-
     resultsDiv.innerHTML = loadingTemplate.innerHTML;
-
-    setLanguage(currentLang); // 更新加载文本的语言
+    setLanguage(currentLang);
 
     try {
-
         const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SEARCH}/${searchTerm}`);
-
         const data = await response.json();
 
         if (Array.isArray(data.data) && data.data.length > 0) {
-
-            // 先显示搜索结果
-
+            // 解析并过滤无效结果
             const formattedResults = data.data.map(result => {
-
                 if (Array.isArray(result)) {
-
                     return result;
-
                 }
-
-                // 如果结果是字符串，尝试解析
-
                 try {
-
                     return JSON.parse(result.replace(/'/g, '"'));
-
                 } catch (e) {
-
                     console.error('解析结果出错:', e);
-
                     return null;
-
                 }
-
             }).filter(result => result !== null);
 
-            displaySearchResults(formattedResults);
+            // 对结果进行去重
+            const uniqueResults = formattedResults.filter((result, index, self) => {
+                // 使用磁力链接作为唯一标识
+                const magnet = result[0];
+                return index === self.findIndex(r => r[0] === magnet);
+            });
 
-            // 等待搜索结果渲染完成后再显示图片
-
+            displaySearchResults(uniqueResults);
             setTimeout(() => showCoverImage(searchTerm), 300);
-
         } else {
-
             resultsDiv.innerHTML = `<p class="text-center text-inherit opacity-75">${translations[currentLang].noResults}</p>`;
-
-            // 没有搜索结果时隐藏图片
-
             if (container) {
-
                 container.classList.add('hidden');
-
             }
-
         }
-
     } catch (error) {
-
         console.error('搜索出错:', error);
-
         resultsDiv.innerHTML = `<p class="text-center text-inherit opacity-75">${translations[currentLang].searchError}</p>`;
-
-        // 搜索出错时隐藏图片
-
         if (container) {
-
             container.classList.add('hidden');
-
         }
-
     }
-
 }
 
 // 显示搜索结果
@@ -212,52 +147,34 @@ function displaySearchResults(results) {
     }
 
     const html = results.map(([magnet, title, size, date]) => {
-
         const tags = extractTags(title);
-
         const tagsHtml = tags.map(tag => {
-
             return `<div class="tag" data-type="${tag.type}">${getTagLabel(tag.type)}</div>`;
-
         }).join('');
 
         return `
-
             <div class="magnet-item p-6 rounded-xl">
-
                 <div class="flex flex-col gap-4">
-
                     <h3 class="font-medium text-inherit break-all"><a rel="nofollow" href="${magnet}" target="_blank" onclick="return false;">${title}</a></h3>
-
                     <div class="flex flex-wrap gap-2">
-
                         ${tagsHtml}
-
                     </div>
-
                     <p class="text-sm text-inherit opacity-75">
-
                         ${translations[currentLang].size}: ${size} | ${translations[currentLang].date}: ${date}
-
                     </p>
-
                     <button onclick="copyToClipboard('${magnet}')" 
-
                             class="copy-button w-full px-4 py-2 rounded-lg text-sm font-medium text-white">
-
                         ${translations[currentLang].copyButton}
-
                     </button>
-
                 </div>
-
             </div>
-
         `;
-
     }).join('');
 
     searchResults.innerHTML = html;
+    
+    // 添加这一行，确保结果按照标签数量排序
+    sortResults('tags-desc');
 }
 
 // 显示封面图
@@ -729,6 +646,12 @@ const THEMES = {
 
 // 排序配置
 const SORT_OPTIONS = {
+    'tags-desc': {
+        icon: `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M18.045 3.007 12.31 3a1.965 1.965 0 0 0-1.4.585l-7.33 7.394a2 2 0 0 0 0 2.805l6.573 6.631a1.957 1.957 0 0 0 1.4.585 1.965 1.965 0 0 0 1.4-.585l7.409-7.477A2 2 0 0 0 21 11.479v-5.5a2.972 2.972 0 0 0-2.955-2.972Zm-2.452 6.438a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/>
+               </svg>`,
+        label: { zh: '标签最多', en: 'Most Tags' }
+    },
     'date-desc': {
         icon: `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zM3 7a1 1 0 000 2h7a1 1 0 100-2H3zM3 11a1 1 0 100 2h4a1 1 0 100-2H3z"/>
@@ -1210,7 +1133,13 @@ function sortResults(sortType) {
             const [aSize, aDate] = aInfo.split('|').map(str => str.split(':')[1].trim());
             const [bSize, bDate] = bInfo.split('|').map(str => str.split(':')[1].trim());
             
+            // 获取标签数量
+            const aTagCount = a.querySelectorAll('.tag').length;
+            const bTagCount = b.querySelectorAll('.tag').length;
+            
             switch (sortType) {
+                case 'tags-desc':
+                    return bTagCount - aTagCount;
                 case 'date-desc':
                     return new Date(bDate || 0) - new Date(aDate || 0);
                 case 'date-asc':
@@ -1220,7 +1149,7 @@ function sortResults(sortType) {
                 case 'size-asc':
                     return parseFileSize(aSize) - parseFileSize(bSize);
                 default:
-                    return 0;
+                    return bTagCount - aTagCount; // 默认按标签数量排序
             }
         } catch (error) {
             console.error('排序比较错误:', error);
@@ -1257,7 +1186,7 @@ function displayCollections(collections) {
             `;
             collectionList.appendChild(collectionItem);
         });
-    } else if (collections && typeof collections === 'object') {
+    } else if (typeof collections === 'object' && collections !== null) {
         // 处理对象类型的数据
         Object.entries(collections).forEach(([title, link]) => {
             const collectionItem = document.createElement('div');
@@ -1295,26 +1224,50 @@ function getTagLabel(type) {
 function extractTags(title) {
     const tags = [];
     const tagMap = {
+        // 高清标签
         'HD': {type: 'hd', priority: 1},
         'FHD': {type: 'hd', priority: 1},
+        '高清': {type: 'hd', priority: 1},
+        
+        // 字幕标签
         '字幕': {type: 'subtitle', priority: 2},
         '-C': {type: 'subtitle', priority: 2},
+        'sub': {type: 'subtitle', priority: 2},
+        'SUB': {type: 'subtitle', priority: 2},
+        
+        // 无码标签
         '無修正': {type: 'uncensored', priority: 3},
         '无码': {type: 'uncensored', priority: 3},
         'uncensored': {type: 'uncensored', priority: 3},
+        
+        // 中文标签
         '中文': {type: 'chinese', priority: 4},
+        'ch': {type: 'chinese', priority: 4},
+        'CH': {type: 'chinese', priority: 4},
+        'chinese': {type: 'chinese', priority: 4},
+        
+        // 破解标签
         '破解': {type: 'leak', priority: 5},
-        'leak': {type: 'leak', priority: 5}
+        'leak': {type: 'leak', priority: 5},
+        'LEAK': {type: 'leak', priority: 5}
     };
 
+    // 将标题转换为小写以进行不区分大小写的匹配
+    const lowerTitle = title.toLowerCase();
+    
+    // 使用 Set 来存储已添加的标签类型，避免重复
+    const addedTypes = new Set();
+
+    // 遍历所有关键词进行匹配
     Object.entries(tagMap).forEach(([keyword, {type, priority}]) => {
-        if (title.toLowerCase().includes(keyword.toLowerCase())) {
-            if (!tags.find(t => t.type === type)) {
-                tags.push({type, priority});
-            }
+        // 如果这个类型的标签还没有添加过，并且标题中包含关键词
+        if (!addedTypes.has(type) && lowerTitle.includes(keyword.toLowerCase())) {
+            tags.push({type, priority});
+            addedTypes.add(type);
         }
     });
 
+    // 按优先级排序
     return tags.sort((a, b) => a.priority - b.priority);
 }
 
@@ -1429,7 +1382,7 @@ function showSortMenu(button) {
         return;
     }
 
-    const currentSort = button.value;
+    const currentSort = button.value || 'tags-desc'; // 默认使用标签排序
     const sortMenu = document.createElement('div');
     sortMenu.className = 'sort-menu';
 

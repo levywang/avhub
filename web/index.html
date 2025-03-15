@@ -98,11 +98,11 @@
                         <span class="ml-2 tab-text" data-zh="显示封面" data-en="Show Cover">显示封面</span>
                     </label>
                 </div>
-                <button id="sortButton" class="settings-button theme-toggle" onclick="showSortMenu(this)" value="date-desc">
+                <button id="sortButton" class="settings-button theme-toggle" onclick="showSortMenu(this)" value="tags-desc">
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zM3 7a1 1 0 000 2h7a1 1 0 100-2H3zM3 11a1 1 0 100 2h4a1 1 0 100-2H3z"/>
+                        <path d="M7 7a1 1 0 011 1v3h3a1 1 0 110 2H8v3a1 1 0 11-2 0v-3H3a1 1 0 110-2h3V8a1 1 0 011-1zm7-4a1 1 0 100 2h3a1 1 0 100-2h-3zM7 3a1 1 0 000 2h3a1 1 0 000-2H7zM4 7a1 1 0 100 2h3a1 1 0 000-2H4zm0 4a1 1 0 100 2h3a1 1 0 000-2H4z"/>
                     </svg>
-                    <span class="ml-2">最新日期</span>
+                    <span class="ml-2">标签最多</span>
                 </button>
             </div>
 
@@ -189,5 +189,15 @@
             </div>
         </div>
     </template>
+    
+    <!-- 添加版权信息 -->
+    <footer class="text-center py-4 text-gray-400 text-xs mt-8">
+        <p>
+            <span class="tab-text" data-zh="版权所有" data-en="Copyright">版权所有</span> © 2024 
+            <a href="https://github.com/levywang/avhub" target="_blank" class="text-primary hover:text-primary-hover transition-colors duration-200">
+                AvHub
+            </a>
+        </p>
+    </footer>
 </body>
 </html>

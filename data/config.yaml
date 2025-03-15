@@ -13,9 +13,11 @@ av_spider:
   source_url: "https://missav.ai/cn/search/"
   proxy_url: "http://192.168.50.3:7890" # http or socks5 proxy
   use_proxy: false
+  use_cache: true  # 是否启用缓存
+  cache_dir: "/app/data/.av"  # 缓存目录路径
 
 hacg_spider:
-  source_url: "https://www.hacg.mov/wp/"
+  source_url: "https://www.hacg.mov"
 
 logging:
   log_file: "main.log"

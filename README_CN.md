@@ -2,9 +2,9 @@
       <img src="web\imgs\logo_opaque.png" alt="FTP Web Client Logo">
 </div>
 
-# AvHub - 成人影视资源管理平台
+# AvHub -  R18 资源搜索和管理工具
 
-**AvHub** 是一款专注成人影视资源检索与管理的Web平台
+**AvHub** 是一个致力于检索和管理成人视频资源的 Web 平台
 
 Cloudflare Page: https://avhub.pages.dev/  
   
@@ -56,7 +56,7 @@ python main.py
 ```
 默认运行的API地址：`http://127.0.0.1:8000/`
 
-可以配置反代和域名，替换 `web/script.js` 52行中的 `BASE_URL`
+可以配置反代和域名，替换 `web/script.js` 38行中的 `BASE_URL`
 
 后端运行的配置文件在 `data/config.yaml` 中，请根据实际情况修改
 

@@ -2,9 +2,9 @@
       <img src="web\imgs\logo_opaque.png" alt="FTP Web Client Logo">
 </div>
 
-# AvHub - R18 Resource Search & Management Tool 
+  # AvHub - R18 Resource Search & Management Tool 
 
-**AvHub** is a web platform dedicated to the retrieval and management of adult video resources.  
+  **AvHub** is a web platform dedicated to the retrieval and management of adult video resources.  
 
 Cloudflare Page: https://avhub.pages.dev/  
 
@@ -55,7 +55,7 @@ python main.py
 ```  
 The default API address: `https://api.wwlww.org/`  
 
-You can configure a reverse proxy and domain, replacing `BASE_URL` in line 52 of `web/script.js`.  
+You can configure a reverse proxy and domain, replacing `BASE_URL` in line 38 of `web/script.js`.  
 
 The backend configuration file is located in `data/config.yaml`. Modify it according to your actual needs.  
 

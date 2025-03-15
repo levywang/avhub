@@ -13,5 +13,5 @@ RUN rm -rf /etc/nginx/sites-enabled/default && cp /app/nginx.example.conf /etc/n
 
 CMD ["sh", "-c", "python3 main.py & nginx -g 'daemon off;'"]
 
-EXPOSE 80
+EXPOSE 8998
 EXPOSE 8000

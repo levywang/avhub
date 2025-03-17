@@ -1,0 +1,23 @@
+{
+  "name": "AvHub",
+  "short_name": "AvHub",
+  "description": "R18 Resource Search & Manager",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#141518",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "imgs/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "imgs/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+} 

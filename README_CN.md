@@ -4,7 +4,7 @@
 
 # AvHub -  R18 资源搜索和管理工具
 
-**AvHub** 是一个致力于检索和管理成人视频资源的 Web 平台
+**AvHub** 是一个致力于检索和管理R18视频资源的 Web 平台
 
 Cloudflare Page: https://avhub.pages.dev/  
   

@@ -4,7 +4,7 @@
 
   # AvHub - R18 Resource Search & Management Tool 
 
-  **AvHub** is a web platform dedicated to the retrieval and management of adult video resources.  
+  **AvHub** is a web platform dedicated to the retrieval and management of `R18` video resources.  
 
 Cloudflare Page: https://avhub.pages.dev/  
 

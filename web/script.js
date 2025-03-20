@@ -3,6 +3,12 @@
 // 添加全局变量
 let currentTab = 'search'; // 默认标签页
 
+// 添加视频URL状态管理
+let currentVideoUrl = ''; // 存储当前视频URL
+
+// 添加全局变量来跟踪视频播放状态
+let wasPlaying = false; // 记录切换标签页前的播放状态
+
 function switchTab(tabName) {
     // 更新当前标签页
     currentTab = tabName;
@@ -10,6 +16,7 @@ function switchTab(tabName) {
     // 获取所有标签页内容和按钮
     const tabs = document.querySelectorAll('.tab-content');
     const buttons = document.querySelectorAll('.tab-button');
+    const videoPlayer = document.getElementById('videoPlayer');
     
     // 隐藏所有标签页内容
     tabs.forEach(tab => {
@@ -27,9 +34,25 @@ function switchTab(tabName) {
     // 激活对应的按钮
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
     
-    // 如果切换到播放器标签页，加载视频
+    // 处理视频播放状态
     if (tabName === 'player') {
-        loadVideo();
+        // 切换到播放器标签页
+        if (!currentVideoUrl) {
+            loadVideo();
+        } else if (wasPlaying && videoPlayer) {
+            // 如果之前是播放状态，恢复播放
+            videoPlayer.play().catch(e => console.error('Resume play failed:', e));
+        }
+    } else {
+        // 切换到其他标签页
+        if (videoPlayer) {
+            // 保存当前播放状态
+            wasPlaying = !videoPlayer.paused;
+            // 暂停视频
+            if (!videoPlayer.paused) {
+                videoPlayer.pause();
+            }
+        }
     }
 }
 
@@ -193,7 +216,7 @@ function showCoverImage(searchTerm) {
     if (!coverImageContainer) {
         coverImageContainer = document.createElement('div');
         coverImageContainer.id = 'coverImageContainer';
-        coverImageContainer.className = 'cover-image-container hidden';
+        coverImageContainer.className = 'cover-image-container hidden card-3d';
         
         // 创建图片元素
         image = document.createElement('img');
@@ -206,6 +229,11 @@ function showCoverImage(searchTerm) {
         
         // 将容器添加到搜索结果之前
         document.getElementById('searchResults').insertAdjacentElement('beforebegin', coverImageContainer);
+    } else {
+        // 确保容器有3D卡片类
+        if (!coverImageContainer.classList.contains('card-3d')) {
+            coverImageContainer.classList.add('card-3d');
+        }
     }
 
     const modal = document.getElementById('imageModal');
@@ -245,6 +273,9 @@ function showCoverImage(searchTerm) {
                 coverImageContainer.style.transition = 'opacity 0.3s ease';
                 coverImageContainer.style.opacity = '1';
                 image.classList.add('loaded');
+                
+                // 添加3D效果初始化
+                initCard3DEffect(coverImageContainer);
             });
         };
 
@@ -254,12 +285,80 @@ function showCoverImage(searchTerm) {
         };
 
         // 点击图片显示大图
-        coverImageContainer.onclick = () => {
-            modalImage.src = imageUrl;
+        coverImageContainer.onclick = (e) => {
+            // 获取点击位置相对于容器的坐标
+            const rect = coverImageContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // 将容器分为3x3的网格，根据点击位置选择不同的图片
+            const width = rect.width;
+            const height = rect.height;
+            
+            // 水平分为左、中、右三部分
+            const xSection = Math.floor(x / (width / 3));
+            // 垂直分为上、中、下三部分
+            const ySection = Math.floor(y / (height / 3));
+            
+            // 根据9宫格位置选择不同的图片
+            const position = ySection * 3 + xSection;
+            
+            // 预加载图片，确保图片存在再显示
+            const preloadImage = new Image();
+            
+            // 所有位置都使用相同的图片URL
+            const newImageUrl = imageUrl;
+            
+            // 显示加载指示器
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.className = 'modal-loading';
+            modal.querySelector('.modal-content').appendChild(loadingIndicator);
+            
+            // 预加载图片
+            preloadImage.onload = () => {
+                // 图片加载成功，设置src并显示模态框
+                modalImage.src = newImageUrl;
+                modalImage.classList.add('fullwidth-preview');
+                modal.classList.remove('hidden');
+                
+                // 移除加载指示器
+                if (loadingIndicator.parentNode) {
+                    loadingIndicator.parentNode.removeChild(loadingIndicator);
+                }
+                
+                setTimeout(() => {
+                    modal.classList.add('active');
+                }, 10);
+            };
+            
+            preloadImage.onerror = () => {
+                console.log(`预览图 ${newImageUrl} 加载失败`);
+                
+                // 移除加载指示器
+                if (loadingIndicator.parentNode) {
+                    loadingIndicator.parentNode.removeChild(loadingIndicator);
+                }
+                
+                // 显示错误提示
+                modalImage.classList.add('error');
+                modal.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    modal.classList.add('active');
+                }, 10);
+            };
+            
+            // 开始加载图片
+            preloadImage.src = newImageUrl;
+            
+            // 先显示模态框，但图片为空
+            modalImage.src = '';
+            modalImage.classList.remove('error');
+            modalImage.classList.remove('fullwidth-preview');
             modal.classList.remove('hidden');
-            setTimeout(() => {
-                modal.classList.add('active');
-            }, 10);
+            
+            // 显示模态框时初始化事件
+            initializeModalEvents();
         };
     } else {
         // 如果不是番号格式，隐藏图片容器
@@ -267,24 +366,114 @@ function showCoverImage(searchTerm) {
     }
 }
 
+// 初始化3D卡片效果
+function initCard3DEffect(card) {
+    if (!card) return;
+    
+    // 移除之前可能添加的事件监听器
+    card.removeEventListener('mousemove', handleMouseMove);
+    card.removeEventListener('mouseleave', handleMouseLeave);
+    card.removeEventListener('mouseenter', handleMouseEnter);
+    
+    // 添加事件监听器
+    card.addEventListener('mousemove', handleMouseMove);
+    card.addEventListener('mouseleave', handleMouseLeave);
+    card.addEventListener('mouseenter', handleMouseEnter);
+}
+
+// 处理鼠标移动事件
+function handleMouseMove(e) {
+    const card = this;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // 计算鼠标位置相对于卡片中心的偏移
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const deltaX = (x - centerX) / centerX;
+    const deltaY = (y - centerY) / centerY;
+    
+    // 减小旋转角度，从15度减小到8度
+    const rotateX = deltaY * -8; 
+    const rotateY = deltaX * 8;  
+    
+    // 应用3D变换，减小缩放比例
+    card.style.transform = `perspective(1500px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+    
+    // 减小光影效果的强度
+    card.style.boxShadow = `
+        0 5px 15px rgba(0,0,0,0.2),
+        ${deltaX * 5}px ${deltaY * 5}px 15px rgba(0,0,0,0.1)
+    `;
+    
+    // 减小图片内部的视差效果
+    const image = card.querySelector('img');
+    if (image) {
+        image.style.transform = `translateX(${deltaX * -5}px) translateY(${deltaY * -5}px)`;
+        
+        // 添加亮度调整，使图片在不同角度下亮度均匀
+        const brightness = 1 + (deltaX * 0.05);
+        image.style.filter = `brightness(${brightness})`;
+    }
+}
+
+// 处理鼠标离开事件
+function handleMouseLeave() {
+    const card = this;
+    
+    // 重置变换
+    card.style.transform = 'perspective(1500px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
+    card.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.2)';
+    
+    // 重置图片位置和滤镜
+    const image = card.querySelector('img');
+    if (image) {
+        image.style.transform = 'translateX(0) translateY(0)';
+        image.style.filter = 'brightness(1)';
+    }
+}
+
+// 处理鼠标进入事件
+function handleMouseEnter() {
+    const card = this;
+    
+    // 添加初始变换效果，减小缩放比例
+    card.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease';
+    card.style.transform = 'perspective(1500px) scale3d(1.01, 1.01, 1.01)';
+    card.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
+    
+    // 短暂延迟后移除过渡效果，使鼠标移动时的变换更加流畅
+    setTimeout(() => {
+        card.style.transition = 'none';
+    }, 300); // 增加延迟时间，使过渡更平滑
+}
+
 // 视频播放功能
 let hls = null;
-let autoplayEnabled = false;
+let autoplayEnabled = localStorage.getItem('autoplay') === 'true'; // 从localStorage读取初始值
+let autoNextEnabled = localStorage.getItem('autoNext') === 'true'; // 从localStorage读取初始值
 
 // 初始化自动播放设置
 function initializeAutoplaySettings() {
     const autoplayToggle = document.getElementById('autoplayToggle');
-    if (autoplayToggle) {
-        // 从localStorage读取自动播放设置
-        autoplayEnabled = localStorage.getItem('autoplayEnabled') === 'true';
-        autoplayToggle.checked = autoplayEnabled;
-        
-        // 监听自动播放设置变化
-        autoplayToggle.addEventListener('change', (e) => {
-            autoplayEnabled = e.target.checked;
-            localStorage.setItem('autoplayEnabled', autoplayEnabled);
-        });
-    }
+    const autoNextToggle = document.getElementById('autoNextToggle');
+    
+    // 从localStorage读取设置
+    autoplayToggle.checked = autoplayEnabled;
+    autoNextToggle.checked = autoNextEnabled;
+
+    // 监听自动播放开关变化
+    autoplayToggle.addEventListener('change', function() {
+        autoplayEnabled = this.checked;
+        localStorage.setItem('autoplay', this.checked);
+    });
+
+    // 监听自动下一个开关变化
+    autoNextToggle.addEventListener('change', function() {
+        autoNextEnabled = this.checked;
+        localStorage.setItem('autoNext', this.checked);
+    });
 }
 
 // 初始化封面图开关设置
@@ -319,125 +508,136 @@ function initializeCoverToggle() {
     });
 }
 
-async function loadVideo() {
+// 修改 loadVideo 函数
+function loadVideo() {
     const videoPlayer = document.getElementById('videoPlayer');
+    const videoSourceUrl = document.getElementById('videoSourceUrl');
     const notification = document.getElementById('notification');
-    const sourceUrlElement = document.getElementById('videoSourceUrl');
     const showCover = document.getElementById('coverToggle').checked;
-
-    try {
-        // 添加加载中状态
-        videoPlayer.classList.add('loading');
-        
-        // 显示加载中通知
-        notification.innerHTML = `
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span>${translations[currentLang].loadingVideo}</span>
-        `;
-        notification.classList.add('show');
-
-        // 预加载封面图
-        const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.VIDEO}`);
-        const data = await response.json();
-        
-        // 创建一个Image对象来预加载封面图
-        const img = new Image();
-        img.src = data.img_url;
-        
-        // 等待封面图加载完成
-        await new Promise((resolve) => {
-            img.onload = resolve;
-            img.onerror = resolve; // 如果加载失败也继续
-        });
-
-        // 销毁之前的HLS实例
-        if (hls) {
-            hls.destroy();
-            hls = null;
+    
+    // 如果已经有视频URL，则不重新请求
+    if (currentVideoUrl) {
+        if (videoSourceUrl) {
+            videoSourceUrl.textContent = currentVideoUrl;
         }
-
-        // 设置视频封面（如果开启了封面图显示）
-        if (showCover && data.img_url) {
-            videoPlayer.poster = data.img_url;
-        } else {
-            videoPlayer.poster = ''; // 清除封面图
-        }
-
-        // 更新视频源地址显示
-        sourceUrlElement.textContent = data.url;
-
-        // 根据视频URL类型选择播放方式
-        if (data.url.endsWith('.m3u8')) {
-            if (Hls.isSupported()) {
-                hls = new Hls();
-                hls.loadSource(data.url);
-                hls.attachMedia(videoPlayer);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                    if (autoplayEnabled) {
-                        videoPlayer.play().catch(e => console.error('Auto-play failed:', e));
-                    }
-                });
-            } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
-                videoPlayer.src = data.url;
-                if (autoplayEnabled) {
-                    videoPlayer.play().catch(e => console.error('Auto-play failed:', e));
-                }
-            }
-        } else {
-            videoPlayer.src = data.url;
+        if (videoPlayer && videoPlayer.src !== currentVideoUrl) {
+            videoPlayer.src = currentVideoUrl;
+            // 根据自动播放设置决定是否播放
             if (autoplayEnabled) {
                 videoPlayer.play().catch(e => console.error('Auto-play failed:', e));
             }
         }
-
-        // 确保播放器控件可见
-        videoPlayer.addEventListener('webkitfullscreenchange', () => {
-            if (document.webkitFullscreenElement) {
-                videoPlayer.style.display = 'block';
-                videoPlayer.controls = true;
-            }
-        });
-
-        videoPlayer.addEventListener('fullscreenchange', () => {
-            if (document.fullscreenElement) {
-                videoPlayer.style.display = 'block';
-                videoPlayer.controls = true;
-            }
-        });
-
-        videoPlayer.classList.remove('loading');
-        notification.classList.remove('show');
-    } catch (error) {
-        console.error('加载视频出错:', error);
-        videoPlayer.classList.remove('loading');
-        sourceUrlElement.textContent = '';
-        
-        notification.innerHTML = `
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span>${translations[currentLang].videoError}</span>
-        `;
-        notification.style.background = '#dc2626';
-        notification.classList.add('show');
-        setTimeout(() => {
-            notification.classList.remove('show');
-            notification.style.background = '';
-        }, 3000);
+        return;
     }
+
+    // 显示加载中通知
+    notification.innerHTML = `
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span>${translations[currentLang].loadingVideo}</span>
+    `;
+    notification.classList.add('show');
+
+    // 如果没有视频URL，则请求新的
+    fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.VIDEO}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.url) {
+                currentVideoUrl = data.url; // 保存视频URL
+                if (videoSourceUrl) {
+                    videoSourceUrl.textContent = data.url;
+                }
+                if (videoPlayer) {
+                    // 设置视频封面（如果开启了封面图显示）
+                    if (showCover && data.img_url) {
+                        videoPlayer.poster = data.img_url;
+                    } else {
+                        videoPlayer.poster = ''; // 清除封面图
+                    }
+
+                    videoPlayer.src = data.url;
+                    
+                    // 根据自动播放设置决定是否播放
+                    if (autoplayEnabled) {
+                        videoPlayer.play().catch(e => console.error('Auto-play failed:', e));
+                    }
+
+                    // 添加视频结束事件监听
+                    videoPlayer.onended = () => {
+                        if (autoNextEnabled) {
+                            clearVideoUrl(); // 清除当前URL
+                            loadVideo(); // 加载下一个视频
+                        }
+                    };
+                }
+                
+                // 隐藏加载通知
+                notification.classList.remove('show');
+            }
+        })
+        .catch(error => {
+            console.error('加载视频失败:', error);
+            notification.innerHTML = `
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>${translations[currentLang].videoError}</span>
+            `;
+            notification.style.background = '#dc2626';
+            setTimeout(() => {
+                notification.classList.remove('show');
+                notification.style.background = '';
+            }, 3000);
+        });
 }
 
 // 初始化视频播放器
 document.addEventListener('DOMContentLoaded', () => {
-    initializeAutoplaySettings();
+    initializeAutoplaySettings(); // 这个函数现在已经包含了自动播放和自动下一个的初始化
     initializeCopyButton();
     initializeCoverToggle();
     
+    // 修改下一个按钮的事件监听
     const nextVideoButton = document.getElementById('nextVideo');
     if (nextVideoButton) {
-        nextVideoButton.addEventListener('click', loadVideo);
+        nextVideoButton.addEventListener('click', () => {
+            clearVideoUrl(); // 使用clearVideoUrl函数来处理
+        });
+    }
+
+    // 初始化模态框关闭功能
+    const imageModal = document.getElementById('imageModal');
+    const closeModal = document.getElementById('closeModal');
+
+    if (imageModal && closeModal) {
+        // 点击关闭按钮关闭模态框
+        closeModal.addEventListener('click', () => {
+            imageModal.classList.remove('active');
+            setTimeout(() => {
+                imageModal.classList.add('hidden');
+            }, 300);
+        });
+        
+        // 点击模态框背景关闭模态框
+        imageModal.addEventListener('click', (e) => {
+            if (e.target === imageModal) {
+                imageModal.classList.remove('active');
+                setTimeout(() => {
+                    imageModal.classList.add('hidden');
+                }, 300);
+            }
+        });
+        
+        // ESC键关闭模态框
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !imageModal.classList.contains('hidden')) {
+                imageModal.classList.remove('active');
+                setTimeout(() => {
+                    imageModal.classList.add('hidden');
+                }, 300);
+            }
+        });
     }
 });
 
@@ -782,7 +982,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 下一个视频按钮
     const nextVideoButton = document.getElementById('nextVideo');
     if (nextVideoButton) {
-        nextVideoButton.addEventListener('click', loadVideo);
+        nextVideoButton.addEventListener('click', () => {
+            clearVideoUrl(); // 使用clearVideoUrl函数来处理
+        });
     }
 });
 
@@ -1047,6 +1249,14 @@ function setLanguage(lang) {
             el.textContent = translations[lang][messageKey];
         }
     });
+
+    // 更新模态框关闭提示文本
+    const modal = document.getElementById('imageModal');
+    if (modal) {
+        modal.setAttribute('data-close-text', 
+            lang === 'en' ? 'Click anywhere to close' : '点击任意位置关闭'
+        );
+    }
 }
 
 // 更新分页控件文本
@@ -1518,15 +1728,52 @@ function showThemeMenu(button) {
     document.addEventListener('keydown', handleEscape);
 }
 
-// 注册 Service Worker
-if ('serviceWorker' in navigator) {
+// 修改 Service Worker 注册代码
+if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('./sw.js') // 使用相对路径
             .then(registration => {
                 console.log('ServiceWorker registration successful');
             })
             .catch(err => {
-                console.log('ServiceWorker registration failed: ', err);
+                console.error('ServiceWorker registration failed: ', err);
             });
     });
+} else {
+    console.log('ServiceWorker is not supported or requires HTTPS');
+}
+
+// 修改模态框点击事件处理
+function initializeModalEvents() {
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+
+    // 设置关闭提示文本
+    modal.setAttribute('data-close-text', 
+        currentLang === 'en' ? 'Click anywhere to close' : '点击任意位置关闭'
+    );
+
+    // 点击模态框任意位置关闭
+    modal.addEventListener('click', (e) => {
+        // 添加关闭动画
+        modal.classList.remove('active');
+        modalImage.style.transform = 'scale(0.9)';
+        modalImage.style.opacity = '0';
+        
+        // 延迟隐藏模态框，等待动画完成
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            // 重置图片样式
+            modalImage.style.transform = '';
+            modalImage.style.opacity = '';
+        }, 300);
+    });
+}
+
+// 添加清除视频URL的函数（可以在需要重新加载视频时调用）
+function clearVideoUrl() {
+    if (currentVideoUrl) { // 只有在有当前URL时才清除并重新加载
+        currentVideoUrl = '';
+        loadVideo();
+    }
 }

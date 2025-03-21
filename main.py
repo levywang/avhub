@@ -19,6 +19,7 @@ import pathlib
 import re
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
+from collections import Counter
 
 @hydra.main(config_path='data/', config_name='config', version_base=None)
 def main(cfg: DictConfig):
@@ -243,6 +244,84 @@ def main(cfg: DictConfig):
     scheduler_thread = threading.Thread(target=run_scheduler)
     scheduler_thread.daemon = True
     scheduler_thread.start()
+    
+    @app.get("/v1/hot_searches")
+    async def get_hot_searches(top_n: int = 5, last_n_lines: int = 2000):
+        """返回最热门的搜索词
+        
+        Args:
+            top_n: 返回的热门搜索词数量，默认为5
+            last_n_lines: 读取日志文件的最后行数，默认为1000行
+        """
+        try:
+            # 参数基本验证
+            if top_n < 1:
+                top_n = 5
+            if last_n_lines < 100:
+                last_n_lines = 1000
+                
+            log_file_path = cfg.logging.log_file
+            if not os.path.exists(log_file_path):
+                logger.error(f"Log file does not exist: {log_file_path}")
+                raise HTTPException(status_code=404, detail="Log file does not exist")
+            
+            # 使用线程池异步读取日志文件的最后N行
+            def read_last_n_lines():
+                encodings = ['utf-8', 'gbk', 'iso-8859-1']
+                
+                for encoding in encodings:
+                    try:
+                        with open(log_file_path, 'r', encoding=encoding) as f:
+                            # 使用deque优化内存使用
+                            from collections import deque
+                            return deque(f, last_n_lines)
+                    except UnicodeDecodeError:
+                        continue
+                    except Exception as e:
+                        logger.error(f"Error reading log file with {encoding}: {str(e)}")
+                        continue
+                
+                raise HTTPException(status_code=500, detail="Unable to read log file with any encoding")
+
+            # 读取日志文件最后N行
+            log_content = await asyncio.wait_for(
+                asyncio.get_event_loop().run_in_executor(executor, read_last_n_lines),
+                timeout=10
+            )
+            
+            # 提取包含"AV code"但不包含"404"的行
+            av_code_lines = [line for line in log_content if "AV code" in line and "404" not in line]
+            
+            # 从每行中提取代码
+            search_terms = []
+            for line in av_code_lines:
+                try:
+                    parts = line.split(":")
+                    if len(parts) >= 2:
+                        search_term = parts[-1].strip().lower()
+                        # 规范化搜索词，只保留字母和数字
+                        search_term = re.sub(r'[^a-zA-Z0-9]', '', search_term)
+                        if search_term:
+                            search_terms.append(search_term)
+                except Exception as e:
+                    logger.warning(f"Error processing line: {str(e)}")
+                    continue
+            
+            if not search_terms:
+                return {"status": "succeed", "data": []}
+            
+            # 统计每个搜索词的出现次数并获取前N名
+            term_counts = Counter(search_terms)
+            top_terms = [term for term, _ in term_counts.most_common(top_n)]
+            
+            logger.info(f"Retrieved top {top_n} popular search terms from last {last_n_lines} lines")
+            return {"status": "succeed", "data": top_terms}
+        except asyncio.TimeoutError:
+            logger.error("Timeout while reading log file")
+            raise HTTPException(status_code=504, detail="Request timeout")
+        except Exception as e:
+            logger.error(f"Failed to obtain popular search terms: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
 
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

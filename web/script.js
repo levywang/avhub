@@ -54,15 +54,21 @@ function switchTab(tabName) {
             }
         }
     }
+    
+    // 当切换到搜索标签页时，获取热门搜索词
+    if (tabName === 'search') {
+        fetchHotSearches();
+    }
 }
 
 // 添加 API 配置
 const API_CONFIG = {
-    BASE_URL: 'https://api.wwlww.org/v1',
+    BASE_URL: '/app/v1',
     ENDPOINTS: {
         SEARCH: '/avcode',
         COLLECTIONS: '/hacg',
-        VIDEO: '/get_video'
+        VIDEO: '/get_video',
+        HOT_SEARCHES: '/hot_searches'  // 添加热门搜索接口
     }
 };
 
@@ -639,6 +645,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    
+    // 如果当前是搜索标签页，获取热门搜索词
+    if (currentTab === 'search') {
+        fetchHotSearches();
+    }
 });
 
 // 初始化复制按钮功能
@@ -985,6 +996,11 @@ document.addEventListener('DOMContentLoaded', () => {
         nextVideoButton.addEventListener('click', () => {
             clearVideoUrl(); // 使用clearVideoUrl函数来处理
         });
+    }
+    
+    // 如果当前是搜索标签页，获取热门搜索词
+    if (currentTab === 'search') {
+        fetchHotSearches();
     }
 });
 
@@ -1776,4 +1792,31 @@ function clearVideoUrl() {
         currentVideoUrl = '';
         loadVideo();
     }
+}
+
+// 添加获取热门搜索的函数
+async function fetchHotSearches() {
+    try {
+        const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.HOT_SEARCHES}`);
+        const data = await response.json();
+        
+        if (data.status === 'succeed' && Array.isArray(data.data)) {
+            const hotSearchesContainer = document.getElementById('hotSearches');
+            hotSearchesContainer.innerHTML = data.data
+                .map(term => `
+                    <button class="hot-search-tag" onclick="searchWithTerm('${term}')">
+                        ${term}
+                    </button>
+                `).join('');
+        }
+    } catch (error) {
+        console.error('获取热门搜索失败:', error);
+    }
+}
+
+// 添加点击热门搜索词的处理函数
+function searchWithTerm(term) {
+    const searchInput = document.getElementById('searchInput');
+    searchInput.value = term;
+    searchMagnet();
 }

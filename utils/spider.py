@@ -1,26 +1,34 @@
-# -*- encoding: utf-8 -*-
 import re
 import json
 import os
 import asyncio
 import aiohttp
+import time
+import random
 from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
-from curl_cffi import requests
+from curl_cffi import requests as curl_requests
+
+# HacgSpider 复用 curl_requests，别名保持兼容
+requests = curl_requests
 from omegaconf import DictConfig
 from utils.logger import setup_logger
 from typing import List, Set, Dict, Any
 from aiohttp import ClientTimeout
 
 class AVSpider:
+    # 类级别共享 Session，复用 Cloudflare cookie
+    _sessions: dict = {}
+
     def __init__(self, av_code, source_url, proxy_url, use_proxy, cfg: DictConfig):
         self.source_url = source_url
         self.av_code = av_code.lower()
         self.proxy_url = proxy_url if use_proxy else None
+        self.base_url = "/".join(source_url.rstrip("/").split("/")[:3])
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+            'Accept-Language': 'zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7',
             'Accept-Encoding': 'gzip, deflate, br',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
@@ -28,6 +36,7 @@ class AVSpider:
             'Sec-Fetch-Mode': 'navigate',
             'Sec-Fetch-Site': 'none',
             'Sec-Fetch-User': '?1',
+            'Cache-Control': 'max-age=0',
         }
         self.proxies = {
             "http": self.proxy_url,
@@ -37,20 +46,33 @@ class AVSpider:
         self.executor = ThreadPoolExecutor(max_workers=10)
 
     def _fetch_url(self, url: str) -> str:
-        """使用curl_cffi获取URL内容"""
-        try:
-            response = requests.get(
-                url, 
-                proxies=self.proxies, 
-                headers=self.headers,
-                impersonate="chrome110",
-                timeout=30
-            )
-            response.raise_for_status()
-            return response.text
-        except Exception as e:
-            self.logger.error(f"Error fetching {url}: {str(e)}")
-            return ""
+        """轮换指纹重试，复用各指纹对应的 Session"""
+        fingerprints = ["chrome131", "chrome124", "chrome120", "chrome116", "safari17_0", "firefox133"]
+        fps = random.sample(fingerprints, min(3, len(fingerprints)))
+
+        for attempt, fp in enumerate(fps):
+            try:
+                if fp not in AVSpider._sessions:
+                    AVSpider._sessions[fp] = curl_requests.Session(impersonate=fp)
+                session = AVSpider._sessions[fp]
+                resp = session.get(
+                    url,
+                    headers=self.headers,
+                    proxies=self.proxies,
+                    timeout=30,
+                    allow_redirects=True,
+                )
+                resp.raise_for_status()
+                return resp.text
+            except Exception as e:
+                self.logger.warning(f"Attempt {attempt+1} [{fp}] failed for {url}: {str(e)}")
+                # 该指纹的 Session 可能被标记，丢弃重建
+                AVSpider._sessions.pop(fp, None)
+                if attempt < len(fps) - 1:
+                    time.sleep(random.uniform(1.0, 2.5))
+
+        self.logger.error(f"All attempts failed for {url}")
+        return ""
 
     def _parse_video_page(self, html_content: str, code_str: str) -> Set[str]:
         """在线程池中解析视频页面"""
@@ -178,12 +200,33 @@ class HacgSpider:
         self.filepath = filepath
         self.logger = setup_logger(cfg)
 
+    def _extract_date_key(self, title: str) -> tuple:
+        """从标题中提取年月，用于排序
+        返回 (year, month) 元组，如果无法提取则返回 (0, 0)
+        """
+        # 匹配 "2025年06月合集" 或 "2025年6月合集" 格式
+        match = re.search(r'(\d{4})年(\d{1,2})月', title)
+        if match:
+            year = int(match.group(1))
+            month = int(match.group(2))
+            return (year, month)
+        return (0, 0)  # 无法提取日期的放最后
+
+    def _sort_by_date(self, data: dict) -> dict:
+        """按年月降序排序字典"""
+        sorted_items = sorted(
+            data.items(),
+            key=lambda x: self._extract_date_key(x[0]),
+            reverse=True
+        )
+        return dict(sorted_items)
+
     def get_pages(self):
         url = f'{self.url}/wp/?s=%E5%90%88%E9%9B%86&submit=%E6%90%9C%E7%B4%A2'
         try:
-            response = requests.get(url)
+            response = requests.get(url, impersonate="chrome131")
             response.raise_for_status()
-        except requests.RequestException as e:
+        except Exception as e:
             self.logger.error(f"Request Error: {e}")
             return None
 
@@ -204,9 +247,9 @@ class HacgSpider:
     def get_links(self, page):
         url = f'{self.url}/wp/page/{page}?s=%E5%90%88%E9%9B%86&submit=%E6%90%9C%E7%B4%A2'
         try:
-            response = requests.get(url)
+            response = requests.get(url, impersonate="chrome131")
             response.raise_for_status()
-        except requests.RequestException as e:
+        except Exception as e:
             self.logger.error(f"Request Error: {e}")
             return {}
 
@@ -223,9 +266,9 @@ class HacgSpider:
         magnet_links = {}
         for title, link in links.items():
             try:
-                response = requests.get(link)
+                response = requests.get(link, impersonate="chrome131")
                 response.raise_for_status()
-            except requests.RequestException as e:
+            except Exception as e:
                 self.logger.error(f"Request Error: {e}")
                 continue
 
@@ -277,6 +320,8 @@ class HacgSpider:
                     break
 
         with open(self.filepath, 'w', encoding='utf-8') as file:
-            json.dump(results, file, ensure_ascii=False, indent=4)
+            # 按日期排序后再写入
+            sorted_results = self._sort_by_date(results)
+            json.dump(sorted_results, file, ensure_ascii=False, indent=4)
 
         self.logger.info("JSON file updated")

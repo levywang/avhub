@@ -1,231 +1,35 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AvHub - R18 Resource Search & Manager</title>
-    <link rel="icon" href="imgs/favicon.ico">
-    <link href="https://testingcf.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="style.css" rel="stylesheet">
-    <meta name="theme-color" content="#000000">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="AvHub">
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="imgs/icon-192x192.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AvHub - R18 Resource Search & Manager</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="/imgs/favicon.ico">
+  <link rel="shortcut icon" type="image/x-icon" href="/imgs/favicon.ico">
+
+  <!-- PWA -->
+  <meta name="theme-color" content="#1bb76e">
+  <link rel="manifest" href="/manifest.webmanifest">
+
+  <!-- iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AvHub">
+  <link rel="apple-touch-icon" href="/imgs/icon-192x192.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="/imgs/icon-192x192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="/imgs/icon-512x512.png">
+
+  <!-- Android / general -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="AvHub">
+
+  <!-- SEO -->
+  <meta name="description" content="R18 Resource Search & Manager">
 </head>
-<body class="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen text-gray-100 transition-colors duration-300">
-    <!-- 在 body 标签下添加 logo -->
-    <div class="logo-container">
-        <a href="/" class="logo">
-            <span class="logo-av">Av</span><span class="logo-hub">Hub</span>
-        </a>
-    </div>
-    <!-- 修改设置区域 -->
-    <div class="settings-container">
-        <!-- 语言切换按钮 -->
-        <button id="languageToggle" class="settings-button">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
-            </svg>
-        </button>
-        <!-- 主题切换按钮 -->
-        <button id="themeToggle" class="settings-button theme-toggle">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
-            </svg>
-        </button>
-    </div>
-
-    <!-- 主要内容区域 -->
-    <main class="container mx-auto px-4 pt-20 pb-8">
-        <!-- 标签页导航 -->
-        <div class="flex justify-center mb-8">
-            <div class="tab-container">
-                <button onclick="switchTab('search')" 
-                        class="tab-button active" 
-                        data-tab="search">
-                    <span class="tab-text" data-zh="AV搜索" data-en="AV Search">AV搜索</span>
-                </button>
-                <button onclick="switchTab('collections')" 
-                        class="tab-button" 
-                        data-tab="collections">
-                    <span class="tab-text" data-zh="里番合集" data-en="Anime Collection">里番合集</span>
-                </button>
-                <button onclick="switchTab('player')" 
-                        class="tab-button" 
-                        data-tab="player">
-                    <span class="tab-text" data-zh="视频播放" data-en="Video Player">视频播放</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- AV搜索区域 -->
-        <div id="searchTab" class="tab-content">
-            <!-- 热门搜索词区域 -->
-            <div class="max-w-2xl mx-auto mb-4">
-                <div class="hot-searches flex items-center gap-2 text-sm">
-                    <span class="label-text">
-                        <span class="tab-text" data-zh="热门搜索：" data-en="Hot Searches:">热门搜索：</span>
-                    </span>
-                    <div id="hotSearches" class="flex flex-wrap gap-2"></div>
-                </div>
-            </div>
-            
-            <!-- 搜索框 -->
-            <div class="max-w-2xl mx-auto mb-8">
-                <div class="flex gap-2">
-                    <input type="text" id="searchInput" 
-                           class="flex-1 px-4 py-2"
-                           data-zh-placeholder="请输入AV番号..."
-                           data-en-placeholder="Enter AV number..."
-                           placeholder="请输入AV番号...">
-                    <button onclick="searchMagnet()" 
-                            class="search-button px-6 py-2 min-w-[100px]">
-                        <span class="tab-text" data-zh="搜索" data-en="Search">搜索</span>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- 封面图片区域 -->
-            <div id="coverImageContainer" class="cover-image-container hidden">
-                <img id="coverImage" class="cover-image" src="" alt="封面图片">
-            </div>
-
-            <!-- 大图预览模态框 -->
-            <div id="imageModal" class="image-modal hidden">
-                <div class="modal-content">
-                    <img id="modalImage" class="modal-image" src="" alt="大图预览">
-                    <button id="closeModal" class="modal-close">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            <!-- 排序选项 -->
-            <div class="max-w-4xl mx-auto mb-4 flex justify-between items-center">
-                <div class="cover-toggle flex items-center">
-                    <input type="checkbox" id="coverToggle" class="hidden" checked>
-                    <label for="coverToggle" class="cursor-pointer flex items-center">
-                        <span class="toggle-switch"></span>
-                        <span class="ml-2 tab-text" data-zh="显示封面" data-en="Show Cover">显示封面</span>
-                    </label>
-                </div>
-                <button id="sortButton" class="settings-button theme-toggle" onclick="showSortMenu(this)" value="tags-desc">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M7 7a1 1 0 011 1v3h3a1 1 0 110 2H8v3a1 1 0 11-2 0v-3H3a1 1 0 110-2h3V8a1 1 0 011-1zm7-4a1 1 0 100 2h3a1 1 0 100-2h-3zM7 3a1 1 0 000 2h3a1 1 0 000-2H7zM4 7a1 1 0 100 2h3a1 1 0 000-2H4zm0 4a1 1 0 100 2h3a1 1 0 000-2H4z"/>
-                    </svg>
-                    <span class="ml-2">标签最多</span>
-                </button>
-            </div>
-
-            <!-- 搜索结果 -->
-            <div id="searchResults" class="max-w-4xl mx-auto space-y-3"></div>
-        </div>
-
-        <!-- 里番合集区域 -->
-        <div id="collectionsTab" class="tab-content hidden">
-            <div class="collection-description">
-                <span class="tab-text" data-zh="链接持续更新中..." data-en="Links are being updated...">链接持续更新中...</span>
-            </div>
-            <div id="collectionList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto"></div>
-        </div>
-
-        <!-- 视频播放区域 -->
-        <div id="playerTab" class="tab-content hidden">
-            <div class="max-w-4xl mx-auto">
-                <div class="nsfw-warning mb-4 text-center">
-                    <span class="tab-text" data-zh="⚠️ 警告：该内容包含成人内容 (NSFW)，请确保您已年满18岁" 
-                          data-en="⚠️ Warning: This content contains adult material (NSFW), ensure you are 18+">
-                        ⚠️ 警告：该内容包含成人内容 (NSFW)，请确保您已年满18岁
-                    </span>
-                </div>
-                <div class="relative w-full">
-                    <video id="videoPlayer" class="w-full h-auto" poster="" controls playsinline preload="metadata">
-                        Your browser does not support the video tag.
-                    </video>
-                </div>
-                <div class="video-controls flex justify-between items-center mt-4 mb-4">
-                    <div class="autoplay-toggle flex items-center">
-                        <input type="checkbox" id="autoplayToggle" class="hidden">
-                        <label for="autoplayToggle" class="cursor-pointer flex items-center">
-                            <span class="toggle-switch"></span>
-                            <span class="ml-2 tab-text" data-zh="自动播放" data-en="Auto Play">自动播放</span>
-                        </label>
-                    </div>
-
-                    <div class="autoplay-toggle flex items-center">
-                        <input type="checkbox" id="autoNextToggle" class="hidden">
-                        <label for="autoNextToggle" class="cursor-pointer flex items-center">
-                            <span class="toggle-switch"></span>
-                            <span class="ml-2 tab-text" data-zh="自动下一个" data-en="Auto Next">自动下一个</span>
-                        </label>
-                    </div>
-                    <button id="nextVideo" class="next-button px-6 py-2">
-                        <span class="tab-text" data-zh="下一个" data-en="Next">下一个</span>
-                    </button>
-                </div>
-                <div class="video-source flex items-center bg-opacity-5 rounded-lg p-3 text-sm">
-                    <div class="flex-grow overflow-hidden mr-2">
-                        <div class="source-label mb-1 opacity-70">
-                            <span class="tab-text" data-zh="视频源地址" data-en="Video Source URL">视频源地址</span>
-                        </div>
-                        <div class="source-url truncate font-mono" id="videoSourceUrl"></div>
-                    </div>
-                    <button id="copySourceUrl" class="copy-button flex items-center px-3 py-1.5 rounded" onclick="copyVideoUrl()">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
-                        </svg>
-                        <span class="tab-text" data-zh="复制" data-en="Copy">复制</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- 回到顶部按钮 -->
-    <button id="backToTop" class="back-to-top hidden">
-        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
-        </svg>
-    </button>
-
-    <!-- 正确位置加载HLS.js -->
-    <script src="https://testingcf.jsdelivr.net/npm/hls.js@1.4.12/dist/hls.min.js"></script>
-    <!-- 加载全局函数 -->
-    <script src="globals.js"></script>
-    <!-- 加载主脚本模块 -->
-    <script type="module" src="script.js"></script>
-
-    <!-- 在body末尾添加通知元素 -->
-    <div class="notification" id="notification">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-        </svg>
-        <span>已复制到剪贴板</span>
-    </div>
-
-    <!-- 添加加载动画模板 -->
-    <template id="loadingTemplate">
-        <div class="loading-container">
-            <div class="loading-spinner"></div>
-            <div class="loading-text">
-                <span class="tab-text" data-zh="正在搜索中..." data-en="Searching...">正在搜索中...</span>
-            </div>
-        </div>
-    </template>
-    
-    <!-- 添加版权信息 -->
-    <footer class="text-center py-4 text-gray-400 text-xs mt-8">
-        <p>
-            <span class="tab-text" data-zh="版权所有" data-en="Copyright">版权所有</span> © 2025 
-            <a href="#" target="_blank" class="text-primary hover:text-primary-hover transition-colors duration-200">
-                AvHub
-            </a>
-        </p>
-    </footer>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>

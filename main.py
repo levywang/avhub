@@ -5,9 +5,10 @@ import json
 from bs4 import BeautifulSoup
 from typing import Union
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
 import random
 from utils.spider import *
 import hydra
@@ -44,6 +45,9 @@ def main(cfg: DictConfig):
         allow_methods=cfg.app.cors_methods,
         allow_headers=cfg.app.cors_headers,
     )
+
+    from fastapi import APIRouter
+    api_router = APIRouter(prefix="/api")
 
     # 创建线程池
     executor = ThreadPoolExecutor(max_workers=10)
@@ -134,7 +138,22 @@ def main(cfg: DictConfig):
             logger.error(f"Error in read_random_line: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
 
-    @app.get("/v1/hacg")
+    @api_router.get("/v1/hacg/refresh")
+    async def refresh_hacg():
+        """立即触发里番合集 JSON 更新"""
+        def _run():
+            hacg_spider = HacgSpider(url=cfg.hacg_spider.source_url, filepath=cfg.files.hacg_json_path, cfg=cfg)
+            hacg_spider.update_json_file()
+            logger.info("HacgSpider manual refresh completed.")
+        try:
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(executor, _run)
+            return {"status": "succeed", "message": "HACG data refreshed"}
+        except Exception as e:
+            logger.error(f"Failed to refresh HACG data: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @api_router.get("/v1/hacg")
     async def read_hacg():
         try:
             with open(cfg.files.hacg_json_path, 'r', encoding='utf-8') as file:
@@ -145,7 +164,7 @@ def main(cfg: DictConfig):
             logger.error(f"Failed to fetch HACG data: {str(e)}")
             raise HTTPException(status_code=500, detail="Internal Server Error")
 
-    @app.get("/v1/avcode/{code_str}")
+    @api_router.get("/v1/avcode/{code_str}")
     async def crawl_av(code_str: str):
         # 规范化code_str，只保留字母和数字
         code_str = re.sub(r'[^a-zA-Z0-9]', '', code_str).lower()
@@ -195,11 +214,14 @@ def main(cfg: DictConfig):
             return {"status": "succeed", "data": magnet_data}
         except Exception as e:
             logger.error(f"Error processing AV code {code_str}: {str(e)}")
+            # 如果是404错误，返回404而不是500
+            if "404" in str(e) or "No magnet links found" in str(e):
+                raise HTTPException(status_code=404, detail="No magnet links found")
             raise HTTPException(status_code=500, detail=str(e))
         finally:
             del crawler  # 确保资源被正确释放
 
-    @app.get("/v1/get_video")
+    @api_router.get("/v1/get_video")
     async def get_random_video_url():
         """Returns a random video URL and its corresponding image URL."""
         try:
@@ -245,7 +267,7 @@ def main(cfg: DictConfig):
     scheduler_thread.daemon = True
     scheduler_thread.start()
     
-    @app.get("/v1/hot_searches")
+    @api_router.get("/v1/hot_searches")
     async def get_hot_searches(top_n: int = 5, last_n_lines: int = 2000):
         """返回最热门的搜索词
         
@@ -326,6 +348,66 @@ def main(cfg: DictConfig):
         except Exception as e:
             logger.error(f"Failed to obtain popular search terms: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
+
+    @api_router.get("/v1/img_proxy")
+    async def img_proxy(url: str):
+        """图片反代，绕过防盗链"""
+        import aiohttp
+        from fastapi.responses import Response
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                }, allow_redirects=True, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                    if resp.status != 200:
+                        raise HTTPException(status_code=resp.status, detail="Image fetch failed")
+                    content = await resp.read()
+                    content_type = resp.headers.get("Content-Type", "image/jpeg")
+            return Response(content=content, media_type=content_type)
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"img_proxy error: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # 注册API路由
+    app.include_router(api_router)
+
+    # 挂载前端静态文件
+    web_dist_path = pathlib.Path(__file__).parent / "web" / "dist"
+    if web_dist_path.exists():
+        # 挂载所有静态子目录和根级静态文件
+        for item in web_dist_path.iterdir():
+            if item.is_dir():
+                app.mount(f"/{item.name}", StaticFiles(directory=str(item)), name=item.name)
+
+        @app.get("/{full_path:path}")
+        async def serve_spa(full_path: str):
+            """先尝试返回实际文件，找不到才返回 index.html（SPA fallback）"""
+            # 尝试直接返回对应文件
+            target = web_dist_path / full_path
+            if target.is_file():
+                # 根据文件扩展名设置正确的 Content-Type
+                media_type = None
+                suffix = target.suffix.lower()
+                if suffix == '.webmanifest':
+                    media_type = 'application/manifest+json'
+                elif suffix == '.js':
+                    media_type = 'application/javascript'
+                elif suffix == '.css':
+                    media_type = 'text/css'
+                elif suffix == '.json':
+                    media_type = 'application/json'
+                elif suffix in ['.png', '.jpg', '.jpeg', '.gif', '.ico', '.svg', '.webp']:
+                    media_type = f'image/{suffix[1:]}'
+                return FileResponse(str(target), media_type=media_type)
+            # SPA fallback
+            index_file = web_dist_path / "index.html"
+            if index_file.exists():
+                return FileResponse(str(index_file), media_type='text/html')
+            raise HTTPException(status_code=404, detail="Frontend not built")
+    else:
+        logger.warning("web/dist directory not found, frontend will not be served")
 
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

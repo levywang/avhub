@@ -51,11 +51,13 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import Hls from 'hls.js'
 import { useLang } from '../composables/useLang.js'
 import { useNotification } from '../composables/useNotification.js'
+import { useClipboard } from '../composables/useClipboard.js'
 import API_CONFIG from '../config.js'
 
 const props = defineProps({ active: Boolean })
 const { t } = useLang()
 const { show } = useNotification()
+const { copyText } = useClipboard()
 
 const videoEl = ref(null)
 const currentUrl = ref('')
@@ -129,7 +131,7 @@ function loadNext() {
 
 function copyUrl() {
   if (!currentUrl.value) return
-  navigator.clipboard.writeText(currentUrl.value)
+  copyText(currentUrl.value)
     .then(() => show(t.value.copySuccess))
     .catch(() => show(t.value.copyError, true))
 }

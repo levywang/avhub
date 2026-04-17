@@ -118,11 +118,13 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useLang } from '../composables/useLang.js'
 import { useNotification } from '../composables/useNotification.js'
+import { useClipboard } from '../composables/useClipboard.js'
 import { SORT_OPTIONS } from '../i18n.js'
 import API_CONFIG from '../config.js'
 
 const { lang, t } = useLang()
 const { show } = useNotification()
+const { copyText } = useClipboard()
 
 const searchInput = ref('')
 const loading = ref(false)
@@ -279,7 +281,7 @@ function onCoverToggle() {
 function selectSort(key) { sortType.value = key; sortOpen.value = false }
 
 function copy(text) {
-  navigator.clipboard.writeText(text)
+  copyText(text)
     .then(() => show(t.value.copySuccess))
     .catch(() => show(t.value.copyError, true))
 }

@@ -38,10 +38,12 @@
 import { ref, onMounted } from 'vue'
 import { useLang } from '../composables/useLang.js'
 import { useNotification } from '../composables/useNotification.js'
+import { useClipboard } from '../composables/useClipboard.js'
 import API_CONFIG from '../config.js'
 
 const { t } = useLang()
 const { show } = useNotification()
+const { copyText } = useClipboard()
 const collections = ref([])
 const loading = ref(false)
 const refreshing = ref(false)
@@ -83,7 +85,7 @@ async function load() {
 }
 
 function copy(text) {
-  navigator.clipboard.writeText(text)
+  copyText(text)
     .then(() => show(t.value.copySuccess))
     .catch(() => show(t.value.copyError, true))
 }

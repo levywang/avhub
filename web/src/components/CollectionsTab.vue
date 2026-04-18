@@ -39,7 +39,7 @@ import { ref, onMounted } from 'vue'
 import { useLang } from '../composables/useLang.js'
 import { useNotification } from '../composables/useNotification.js'
 import { useClipboard } from '../composables/useClipboard.js'
-import API_CONFIG from '../config.js'
+import API_CONFIG, { apiFetch } from '../config.js'
 
 const { t } = useLang()
 const { show } = useNotification()
@@ -51,7 +51,7 @@ const refreshing = ref(false)
 async function refresh() {
   refreshing.value = true
   try {
-    const res = await fetch(`${API_CONFIG.BASE_URL}/hacg/refresh`)
+    const res = await apiFetch(`${API_CONFIG.BASE_URL}/hacg/refresh`)
     const data = await res.json()
     if (data.status === 'succeed') {
       show(t.value.refreshSuccess)
@@ -69,7 +69,7 @@ async function refresh() {
 async function load() {
   loading.value = true
   try {
-    const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.COLLECTIONS}`)
+    const res = await apiFetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.COLLECTIONS}`)
     const data = await res.json()
     const raw = data.data || data
     if (Array.isArray(raw)) {

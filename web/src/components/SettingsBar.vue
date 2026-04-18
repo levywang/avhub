@@ -1,5 +1,28 @@
 <template>
   <div class="settings-container">
+    <!-- API Key -->
+    <div class="relative" ref="keyRef">
+      <button class="settings-button" @click="keyOpen = !keyOpen" aria-label="API Key">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <circle cx="7.5" cy="15.5" r="3.5"/>
+          <path d="M11 12l9-9"/>
+          <path d="M17 6l2 2"/>
+          <path d="M20 3l1 1"/>
+        </svg>
+      </button>
+      <div v-if="keyOpen" class="theme-menu" style="min-width:220px; padding: 12px;">
+        <div class="text-xs opacity-60 mb-2">API Key</div>
+        <input
+          v-model="apiKeyInput"
+          type="password"
+          class="w-full px-3 py-1.5 rounded text-sm mb-2"
+          placeholder="输入 API Key"
+          @keypress.enter="saveApiKey"
+        />
+        <button class="search-button w-full py-1.5 text-sm" @click="saveApiKey">保存</button>
+      </div>
+    </div>
+
     <!-- Language -->
     <div class="relative" ref="langRef">
       <button class="settings-button" @click="langOpen = !langOpen" aria-label="Language">
@@ -50,14 +73,23 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useTheme } from '../composables/useTheme.js'
 import { useLang } from '../composables/useLang.js'
 import { THEMES } from '../i18n.js'
+import { getApiKey, setApiKey } from '../config.js'
 
 const { theme, applyTheme } = useTheme()
 const { lang, setLang } = useLang()
 
 const langOpen = ref(false)
 const themeOpen = ref(false)
+const keyOpen = ref(false)
 const langRef = ref(null)
 const themeRef = ref(null)
+const keyRef = ref(null)
+const apiKeyInput = ref(getApiKey())
+
+function saveApiKey() {
+  setApiKey(apiKeyInput.value.trim())
+  keyOpen.value = false
+}
 
 const themeColors = {
   dark: '#94a3b8',
@@ -73,6 +105,7 @@ function selectTheme(t) { applyTheme(t); themeOpen.value = false }
 function onClickOutside(e) {
   if (langRef.value && !langRef.value.contains(e.target)) langOpen.value = false
   if (themeRef.value && !themeRef.value.contains(e.target)) themeOpen.value = false
+  if (keyRef.value && !keyRef.value.contains(e.target)) keyOpen.value = false
 }
 
 onMounted(() => document.addEventListener('click', onClickOutside))

@@ -120,7 +120,7 @@ import { useLang } from '../composables/useLang.js'
 import { useNotification } from '../composables/useNotification.js'
 import { useClipboard } from '../composables/useClipboard.js'
 import { SORT_OPTIONS } from '../i18n.js'
-import API_CONFIG from '../config.js'
+import API_CONFIG, { apiFetch } from '../config.js'
 
 const { lang, t } = useLang()
 const { show } = useNotification()
@@ -215,7 +215,7 @@ const sortedResults = computed(() => {
 
 async function fetchHotSearches() {
   try {
-    const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.HOT_SEARCHES}`)
+    const res = await apiFetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.HOT_SEARCHES}`)
     const data = await res.json()
     hotSearches.value = Array.isArray(data) ? data : (data.data || [])
   } catch {}
@@ -238,7 +238,7 @@ async function doSearch() {
   results.value = []
   coverUrl.value = ''
   try {
-    const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SEARCH}/${term}`)
+    const res = await apiFetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SEARCH}/${term}`)
     const data = await res.json()
     if (Array.isArray(data.data) && data.data.length > 0) {
       const parsed = data.data.map(r => {

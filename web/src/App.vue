@@ -24,6 +24,7 @@
 
     <BackToTop />
     <Notification />
+    <ApiKeyDialog />
 
     <footer class="text-center py-4 text-gray-400 text-xs mt-8">
       <p>{{ t.copyright }} © {{ currentYear }} <a href="#" class="text-primary hover:opacity-80">AvHub</a></p>
@@ -41,6 +42,7 @@ import CollectionsTab from './components/CollectionsTab.vue'
 import PlayerTab from './components/PlayerTab.vue'
 import BackToTop from './components/BackToTop.vue'
 import Notification from './components/Notification.vue'
+import ApiKeyDialog from './components/ApiKeyDialog.vue'
 
 const { t } = useLang()
 const currentTab = ref('search')

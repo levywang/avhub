@@ -52,7 +52,7 @@ import Hls from 'hls.js'
 import { useLang } from '../composables/useLang.js'
 import { useNotification } from '../composables/useNotification.js'
 import { useClipboard } from '../composables/useClipboard.js'
-import API_CONFIG from '../config.js'
+import API_CONFIG, { apiFetch } from '../config.js'
 
 const props = defineProps({ active: Boolean })
 const { t } = useLang()
@@ -74,7 +74,7 @@ async function loadVideo() {
   loading = true
   show(t.value.loadingVideo)
   try {
-    const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.VIDEO}`)
+    const res = await apiFetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.VIDEO}`)
     const data = await res.json()
     if (data?.url) {
       currentUrl.value = data.url

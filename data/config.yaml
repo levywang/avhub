@@ -4,20 +4,22 @@ app:
   cors_credentials: true
   cors_methods: ["*"]
   cors_headers: ["*"]
+  auth_enabled: ${oc.env:AUTH_ENABLED,false}
+  api_key: ${oc.env:API_KEY,"123456"}
 
 files:
   hacg_json_path: "/app/data/hacg.json"
   video_urls_txt_path: "/app/data/video_urls.txt"
 
 av_spider:
-  source_url: "https://missav.ai/cn/search/"
-  proxy_url: "http://192.168.50.3:7890" # http or socks5 proxy
-  use_proxy: false
-  use_cache: true  # 是否启用缓存
-  cache_dir: "/app/data/.av"  # 缓存目录路径
+  source_url: ${oc.env:AV_SOURCE_URL,"https://missav.ai/cn/search/"}
+  proxy_url: ${oc.env:PROXY_URL,"http://127.0.0.1:7890"}
+  use_proxy: ${oc.env:USE_PROXY,false}
+  use_cache: ${oc.env:USE_CACHE,true}
+  cache_dir: ${oc.env:CACHE_DIR,"/app/data/.av"}
 
 hacg_spider:
-  source_url: "https://www.hacg.mov"
+  source_url: ${oc.env:HACG_SOURCE_URL,"https://www.hacg.mov"}
 
 logging:
   log_file: "main.log"

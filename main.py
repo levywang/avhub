@@ -46,8 +46,28 @@ def main(cfg: DictConfig):
         allow_headers=cfg.app.cors_headers,
     )
 
-    from fastapi import APIRouter
+    from fastapi import APIRouter, Request
     api_router = APIRouter(prefix="/api")
+
+    # API Key 认证 middleware
+    auth_enabled = str(cfg.app.auth_enabled).lower() == 'true'
+    if auth_enabled:
+        from starlette.middleware.base import BaseHTTPMiddleware
+        from starlette.responses import JSONResponse as StarletteJSON
+
+        class APIKeyMiddleware(BaseHTTPMiddleware):
+            async def dispatch(self, request: Request, call_next):
+                # 静态文件和 index.html 不需要认证
+                path = request.url.path
+                if not path.startswith("/api/"):
+                    return await call_next(request)
+                key = request.headers.get("X-API-Key") or request.query_params.get("api_key")
+                if key != cfg.app.api_key:
+                    return StarletteJSON({"detail": "Unauthorized"}, status_code=401)
+                return await call_next(request)
+
+        app.add_middleware(APIKeyMiddleware)
+        logger.info("API Key authentication enabled")
 
     # 创建线程池
     executor = ThreadPoolExecutor(max_workers=10)
@@ -170,7 +190,8 @@ def main(cfg: DictConfig):
         code_str = re.sub(r'[^a-zA-Z0-9]', '', code_str).lower()
         
         # 如果启用了缓存，确保缓存目录存在并尝试从缓存读取
-        if cfg.av_spider.use_cache:
+        use_cache = str(cfg.av_spider.use_cache).lower() == 'true'
+        if use_cache:
             # 确保缓存目录存在
             pathlib.Path(cfg.av_spider.cache_dir).mkdir(parents=True, exist_ok=True)
             
@@ -188,7 +209,7 @@ def main(cfg: DictConfig):
         crawler = AVSpider(av_code=code_str, 
                           source_url=cfg.av_spider.source_url, 
                           proxy_url=cfg.av_spider.proxy_url,
-                          use_proxy=cfg.av_spider.use_proxy,
+                          use_proxy=str(cfg.av_spider.use_proxy).lower() == 'true',
                           cfg=cfg)
         
         try:
@@ -202,7 +223,7 @@ def main(cfg: DictConfig):
             magnet_data = [str(item) for item in magnet_links]
 
             # 如果启用了缓存，保存到缓存文件（只保存数据部分）
-            if cfg.av_spider.use_cache:
+            if use_cache:
                 try:
                     with open(cache_path, 'w', encoding='utf-8') as f:
                         json.dump(magnet_data, f, ensure_ascii=False, indent=4)

@@ -25,7 +25,7 @@ ENV HACG_SOURCE_URL="https://www.hacg.mov"
 
 # Auth
 ENV AUTH_ENABLED=false
-ENV API_KEY="123456
+ENV API_KEY="123456"
 
 EXPOSE 8000
 CMD ["python3", "main.py"]

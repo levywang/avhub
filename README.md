@@ -1,14 +1,14 @@
 <div align="center">
-      <img src="web\imgs\logo_opaque.png" alt="FTP Web Client Logo">
+  <img src="web/public/imgs/logo_opaque.png" alt="AvHub Logo">
 </div>
 
-  # AvHub - R18 Resource Search & Management Tool 
+# AvHub - R18 Resource Search & Management Tool
 
-  **AvHub** is a web platform dedicated to the retrieval and management of `R18` video resources.  
+**AvHub** is a web platform dedicated to the retrieval and management of R18 video resources, with a Vue 3 frontend served directly by the FastAPI backend.
 
-Cloudflare Page: https://avhub.pages.dev/  
+Cloudflare Page: https://avhub.pages.dev/
 
-Vercel Page: https://avhub.vercel.app/  
+Vercel Page: https://avhub.vercel.app/
 
 ****
 
@@ -20,91 +20,157 @@ Vercel Page: https://avhub.vercel.app/
 [![GitHub Issue](https://img.shields.io/github/issues-closed-raw/levywang/avhub?label=Closed%20Issue&logo=github)](https://github.com/levywang/avhub/issues?q=is%3Aissue+is%3Aclosed "Click to view the repo on Github")
 
 [![Docker Stars](https://img.shields.io/docker/stars/levywang/avhub?label=Stars&logo=docker)](https://hub.docker.com/r/levywang/avhub "Click to view the image on Docker Hub")
-[![Docker Pulls](https://img.shields.io/docker/pulls/levywang/avhub?label=Pulls&logo=docker)](https://hub.docker.com/r/levywang/avhub "Click to view the image on Docker Hub")  
+[![Docker Pulls](https://img.shields.io/docker/pulls/levywang/avhub?label=Pulls&logo=docker)](https://hub.docker.com/r/levywang/avhub "Click to view the image on Docker Hub")
 
-## Star History  
+## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=levywang/avhub&type=Date)](https://star-history.com/#levywang/avhub&Date)  
+[![Star History Chart](https://api.star-history.com/svg?repos=levywang/avhub&type=Date)](https://star-history.com/#levywang/avhub&Date)
 
-[English](README.md) | [简体中文](README_CN.md)   
-
----
-
-### **Core Features**  
-● 🔗 **Magnet Link Search by Video Code**  
-  &emsp;Accurately find magnet links and cover images corresponding to video codes.  
-● 📅 **Timely Hacg Resource Updates**  
-  &emsp;Automatically update and archive monthly hacg resources.  
-● 📊 **Random Video Recommendation**  
-  &emsp;Random playback functionality based on crawled data.  
-● 🌐 **Multi-language Support**  
-  &emsp;Supports multiple language interfaces to meet global user needs.  
-● 🎨 **Multiple Theme Options**  
-  &emsp;Offers various theme color schemes to enhance user experience.  
+[English](README.md) | [简体中文](README_CN.md)
 
 ---
 
-## Getting Started  
+### Core Features
 
-### Run Locally  
-```bash  
-git clone https://github.com/levywang/avhub.git  
-cd avhub  
-pip install -r requirements.txt  
-python main.py  
-```  
-The default API address: `http://127.0.0.1:8000/`  
+● 🔗 **Magnet Link Search by Video Code**
+  &emsp;Accurately find magnet links and cover images corresponding to video codes.
+● 📅 **Timely Hacg Resource Updates**
+  &emsp;Automatically update and archive monthly hacg resources, with manual refresh support.
+● 📊 **Random Video Recommendation**
+  &emsp;Random playback functionality based on crawled data.
+● 🌐 **Multi-language Support**
+  &emsp;Supports Chinese and English interfaces.
+● 🎨 **Multiple Theme Options**
+  &emsp;Dark, Light, Emerald, Ocean, and Amethyst themes.
+● 🔒 **API Key Authentication**
+  &emsp;Optional access protection via API Key, configurable via environment variable.
 
-You can configure a reverse proxy and domain, replacing `BASE_URL` in line 3 of `web/config.js`.  
-
-The backend configuration file is located in `data/config.yaml`. Modify it according to your actual needs.  
-
-### Docker Deployment  
-**Note: Python Version >= 3.7**  
-```bash  
-git clone https://github.com/levywang/avhub.git  
-cd avhub  
-docker run -d -p <your_server_port>:80 -v $PWD:/app --name avhub levywang/avhub:latest  
-```  
 ---
 
+## Getting Started
 
-### **Configuration Instructions**  
+### Run Locally
 
-If you deploy the project on a server within China, the source site `missav` is blocked, so you need to configure a proxy server in `config.yaml`. Edit the `/data/config.yaml` file and modify it as follows:  
-```yaml
-av_spider:
-  source_url: "https://missav.ai/cn/search/"
-  proxy_url: "http://192.168.50.3:7890" # HTTP or SOCKS5 proxy
-  use_proxy: true
+```bash
+git clone https://github.com/levywang/avhub.git
+cd avhub
+
+# Build frontend
+cd web
+npm install
+npm run build
+cd ..
+
+# Install backend dependencies and run
+pip install -r requirements.txt
+python main.py
+```
+
+The service will be available at `http://127.0.0.1:8000/`. The frontend is served directly by the FastAPI backend from `web/dist`.
+
+### Docker Deployment
+
+The Docker image uses a multi-stage build: Node.js builds the frontend, then the output is copied into the Python image. No pre-build step is needed.
+
+```bash
+# Pull and run from Docker Hub
+docker run -d \
+  -p 8000:8000 \
+  -v $PWD/data:/app/data \
+  --name avhub \
+  levywang/avhub:latest
+```
+
+Or build locally:
+
+```bash
+git clone https://github.com/levywang/avhub.git
+cd avhub
+docker build -t avhub .
+docker run -d -p 8000:8000 -v $PWD/data:/app/data --name avhub avhub
 ```
 
 ---
 
-### **Technology Stack**  
-- **Frontend**:  
-  - Built with **Tailwind CSS** for a modern, responsive interface.  
-  - Integrated with **hls.js** for smooth video playback.  
-- **Backend**:  
-  - Developed using **FastAPI**, a Python framework, to provide efficient and stable API services.  
-- **Privacy Protection**:  
-  - Strictly adheres to privacy principles and does not directly host any resource files. All data is retrieved through third-party links.  
+### Configuration
+
+The backend configuration file is located at `data/config.yaml`. All key options support **environment variable overrides**.
+
+#### Proxy (required for servers in China)
+
+`missav` is blocked in China. Configure a proxy in `data/config.yaml` or via environment variables:
+
+```yaml
+av_spider:
+  source_url: "https://missav.ai/cn/search/"
+  proxy_url: "http://192.168.50.3:7890"  # HTTP or SOCKS5 proxy
+  use_proxy: true
+```
+
+#### API Key Authentication
+
+To restrict access, enable authentication:
+
+```yaml
+app:
+  auth_enabled: true
+  api_key: "your-secret-key"
+```
+
+Or via environment variables when running Docker:
+
+```bash
+docker run -d \
+  -p 8000:8000 \
+  -v $PWD/data:/app/data \
+  -e AUTH_ENABLED=true \
+  -e API_KEY=your-secret-key \
+  -e USE_PROXY=true \
+  -e PROXY_URL=http://192.168.50.3:7890 \
+  --name avhub \
+  levywang/avhub:latest
+```
+
+#### All Supported Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `AUTH_ENABLED` | `false` | Enable API Key authentication |
+| `API_KEY` | `change-me-please` | API Key value |
+| `USE_PROXY` | `false` | Enable proxy for spider requests |
+| `PROXY_URL` | `http://127.0.0.1:7890` | Proxy address |
+| `USE_CACHE` | `true` | Cache search results locally |
+| `CACHE_DIR` | `/app/data/.av` | Cache directory path |
+| `AV_SOURCE_URL` | `https://missav.ai/cn/search/` | AV search source URL |
+| `HACG_SOURCE_URL` | `https://www.hacg.mov` | Hacg source URL |
 
 ---
 
-### **Data Sources**  
-- **Magnet Links and Cover Images**: Sourced from **missav**.  
-- **Hacg Resources**: Sourced from **hacg liuli**.  
-- **Random Video Recommendations**: Sourced from crawled data stored in the local file `/data/video_urls.txt`.  
+### Technology Stack
 
-The above data sources are configured in `/data/config.yaml`. If the data sources change or become inaccessible, modifications and maintenance are required.  
-
----
-
-### **Legal Disclaimer**  
-Users must comply with the laws and regulations of their respective regions. AvHub is solely a resource retrieval tool and does not involve the distribution or storage of any resources.  
+- **Frontend**: Vue 3 + Vite + Tailwind CSS + hls.js
+- **Backend**: Python + FastAPI (also serves the frontend static files)
+- **Containerization**: Docker multi-stage build (Node.js → Python)
+- **Privacy**: Does not host any resource files. All data is retrieved via third-party links.
 
 ---
 
-### **License**  
+### Data Sources
+
+- **Magnet Links & Cover Images**: sourced from **missav**
+- **Hacg Resources**: sourced from **hacg liuli**
+- **Random Video Recommendations**: sourced from crawled data stored in `/data/video_urls.txt`
+
+All data sources are configured in `data/config.yaml`.
+
+---
+
+### Legal Disclaimer
+
+Users must comply with the laws and regulations of their respective regions. AvHub is solely a resource retrieval tool and does not involve the distribution or storage of any resources.
+
+---
+
+### License
+
 This project is provided under an **Apache License 2.0** license that can be found in the [LICENSE](LICENSE) file. By using, distributing, or contributing to this project, you agree to the terms and conditions of this license.

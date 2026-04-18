@@ -32,18 +32,18 @@ Vercel Page: https://avhub.vercel.app/
 
 ### Core Features
 
-● 🔗 **Magnet Link Search by Video Code**
-  &emsp;Accurately find magnet links and cover images corresponding to video codes.
-● 📅 **Timely Hacg Resource Updates**
-  &emsp;Automatically update and archive monthly hacg resources, with manual refresh support.
-● 📊 **Random Video Recommendation**
-  &emsp;Random playback functionality based on crawled data.
-● 🌐 **Multi-language Support**
-  &emsp;Supports Chinese and English interfaces.
-● 🎨 **Multiple Theme Options**
-  &emsp;Dark, Light, Emerald, Ocean, and Amethyst themes.
-● 🔒 **API Key Authentication**
-  &emsp;Optional access protection via API Key, configurable via environment variable.
+● 🔗 **Magnet Link Search by Video Code**  
+  &emsp;Accurately find magnet links and cover images corresponding to video codes.  
+● 📅 **Timely Hacg Resource Updates**  
+  &emsp;Automatically update and archive monthly hacg resources, with manual refresh support.  
+● 📊 **Random Video Recommendation**  
+  &emsp;Random playback functionality based on crawled data.  
+● 🌐 **Multi-language Support**  
+  &emsp;Supports Chinese and English interfaces.  
+● 🎨 **Multiple Theme Options**  
+  &emsp;Dark, Light, Emerald, Ocean, and Amethyst themes.  
+● 🔒 **API Key Authentication**  
+  &emsp;Optional access protection via API Key, configurable via environment variable.  
 
 ---
 
@@ -136,7 +136,7 @@ docker run -d \
 | Variable | Default | Description |
 |---|---|---|
 | `AUTH_ENABLED` | `false` | Enable API Key authentication |
-| `API_KEY` | `change-me-please` | API Key value |
+| `API_KEY` | `123456` | API Key value |
 | `USE_PROXY` | `false` | Enable proxy for spider requests |
 | `PROXY_URL` | `http://127.0.0.1:7890` | Proxy address |
 | `USE_CACHE` | `true` | Cache search results locally |

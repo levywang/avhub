@@ -1,46 +1,64 @@
 <template>
-  <div class="max-w-4xl mx-auto">
-    <div class="nsfw-warning mb-4 text-center">{{ t.nsfw }}</div>
+  <div class="player-wrap">
+    <!-- NSFW warning -->
+    <div class="nsfw-bar">{{ t.nsfw }}</div>
 
-    <div class="relative w-full">
+    <!-- Video -->
+    <div class="video-shell">
       <video
         ref="videoEl"
-        class="w-full h-auto"
+        class="video-el"
         controls
         playsinline
         preload="metadata"
-        :style="{ maxHeight: 'calc(100vh - 300px)', minHeight: '200px', background: '#000', objectFit: 'contain' }"
       />
+      <!-- Loading overlay -->
+      <Transition name="fade">
+        <div v-if="buffering" class="video-overlay">
+          <div class="buffer-spinner"/>
+        </div>
+      </Transition>
     </div>
 
-    <div class="video-controls flex justify-between items-center mt-4 mb-4">
-      <div class="autoplay-toggle flex items-center">
-        <input type="checkbox" id="autoplayToggle" class="hidden" v-model="autoplay" @change="saveAutoplay"/>
-        <label for="autoplayToggle" class="cursor-pointer flex items-center">
-          <span class="toggle-switch"/>
-          <span class="ml-2">{{ t.autoplay }}</span>
-        </label>
-      </div>
-      <div class="autoplay-toggle flex items-center">
-        <input type="checkbox" id="autoNextToggle" class="hidden" v-model="autoNext" @change="saveAutoNext"/>
-        <label for="autoNextToggle" class="cursor-pointer flex items-center">
-          <span class="toggle-switch"/>
-          <span class="ml-2">{{ t.autoNext }}</span>
-        </label>
-      </div>
-      <button class="next-button px-6 py-2" @click="loadNext">{{ t.next }}</button>
-    </div>
+    <!-- Controls -->
+    <div class="ctrl-bar">
+      <button class="toggle-btn" :class="{ active: autoplay }" @click="toggleAutoplay">
+        <span class="toggle-track">
+          <span class="toggle-thumb"/>
+        </span>
+        <span class="ctrl-label">{{ t.autoplay }}</span>
+      </button>
 
-    <div class="video-source flex items-center rounded-lg p-3 text-sm">
-      <div class="flex-grow overflow-hidden mr-2 min-w-0">
-        <div class="source-label mb-1 opacity-70">{{ t.sourceUrl }}</div>
-        <div class="source-url truncate font-mono">{{ currentUrl }}</div>
-      </div>
-      <button class="copy-button flex items-center px-3 py-1.5 rounded flex-shrink-0" @click="copyUrl">
-        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+      <button class="toggle-btn" :class="{ active: autoNext }" @click="toggleAutoNext">
+        <span class="toggle-track">
+          <span class="toggle-thumb"/>
+        </span>
+        <span class="ctrl-label">{{ t.autoNext }}</span>
+      </button>
+
+      <button class="next-btn" @click="loadNext">
+        <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+          <path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86zM16 6h2v12h-2z"/>
         </svg>
-        {{ t.copy }}
+        {{ t.next }}
+      </button>
+    </div>
+
+    <!-- Source bar -->
+    <div class="source-bar">
+      <div class="source-info">
+        <span class="source-dot"/>
+        <span class="source-url">{{ currentUrl || '—' }}</span>
+      </div>
+      <button class="copy-btn" @click="copyUrl" :class="{ copied: justCopied }">
+        <svg v-if="!justCopied" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+          <rect x="9" y="9" width="13" height="13" rx="2"/>
+          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+        </svg>
+        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        {{ justCopied ? t.copied : t.copy }}
       </button>
     </div>
   </div>
@@ -61,6 +79,8 @@ const { copyText } = useClipboard()
 
 const videoEl = ref(null)
 const currentUrl = ref('')
+const buffering = ref(false)
+const justCopied = ref(false)
 const autoplay = ref(localStorage.getItem('autoplay') === 'true')
 const autoNext = ref(localStorage.getItem('autoNext') === 'true')
 let hlsInstance = null
@@ -68,11 +88,13 @@ let loading = false
 
 function saveAutoplay() { localStorage.setItem('autoplay', autoplay.value) }
 function saveAutoNext() { localStorage.setItem('autoNext', autoNext.value) }
+function toggleAutoplay() { autoplay.value = !autoplay.value; saveAutoplay() }
+function toggleAutoNext() { autoNext.value = !autoNext.value; saveAutoNext() }
 
 async function loadVideo() {
   if (loading) return
   loading = true
-  show(t.value.loadingVideo)
+  buffering.value = true
   try {
     const res = await apiFetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.VIDEO}`)
     const data = await res.json()
@@ -82,6 +104,7 @@ async function loadVideo() {
     }
   } catch {
     show(t.value.videoError, true)
+    buffering.value = false
   } finally {
     loading = false
   }
@@ -91,60 +114,286 @@ function playUrl(url, poster) {
   const video = videoEl.value
   if (!video) return
 
-  // cleanup
   if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null }
   video.onended = null
 
   if (poster) video.poster = poster
+
+  const onReady = () => {
+    buffering.value = false
+    if (autoplay.value) video.play().catch(() => {})
+  }
 
   if (url.includes('.m3u8')) {
     if (Hls.isSupported()) {
       hlsInstance = new Hls({ maxBufferLength: 30, maxMaxBufferLength: 60 })
       hlsInstance.loadSource(url)
       hlsInstance.attachMedia(video)
-      hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-        if (autoplay.value) video.play().catch(() => {})
-      })
+      hlsInstance.on(Hls.Events.MANIFEST_PARSED, onReady)
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = url
-      if (autoplay.value) video.play().catch(() => {})
+      video.addEventListener('loadedmetadata', onReady, { once: true })
     } else {
       show(t.value.browserNotSupported, true)
+      buffering.value = false
     }
   } else {
     video.src = url
-    if (autoplay.value) video.play().catch(() => {})
+    video.addEventListener('loadedmetadata', onReady, { once: true })
   }
 
-  video.onended = () => {
-    if (autoNext.value) loadNext()
-  }
+  video.onended = () => { if (autoNext.value) loadNext() }
 }
 
 function loadNext() {
   currentUrl.value = ''
+  buffering.value = true
   if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null }
   const video = videoEl.value
-  if (video) { video.src = ''; video.onended = null }
+  if (video) { video.src = ''; video.poster = ''; video.onended = null }
   loadVideo()
 }
 
 function copyUrl() {
   if (!currentUrl.value) return
-  copyText(currentUrl.value)
-    .then(() => show(t.value.copySuccess))
-    .catch(() => show(t.value.copyError, true))
+  copyText(currentUrl.value).then(() => {
+    justCopied.value = true
+    setTimeout(() => { justCopied.value = false }, 2000)
+  }).catch(() => show(t.value.copyError, true))
 }
 
 watch(() => props.active, (val) => {
   if (val && !currentUrl.value) loadVideo()
 })
 
-onMounted(() => {
-  if (props.active) loadVideo()
-})
-
-onUnmounted(() => {
-  if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null }
-})
+onMounted(() => { if (props.active) loadVideo() })
+onUnmounted(() => { if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null } })
 </script>
+
+<style scoped>
+.player-wrap {
+  max-width: 56rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* NSFW */
+.nsfw-bar {
+  font-size: 0.75rem;
+  color: #ef4444;
+  font-weight: 700;
+  text-align: center;
+  padding: 6px 12px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+}
+
+/* Video shell */
+.video-shell {
+  position: relative;
+  width: 100%;
+  background: #000;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  border: 1px solid var(--border-color);
+}
+
+.video-el {
+  width: 100%;
+  height: calc(100vh - 380px);
+  min-height: 240px;
+  max-height: 560px;
+  display: block;
+  object-fit: contain;
+}
+
+/* Loading overlay */
+.video-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.buffer-spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid rgba(255,255,255,0.15);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Controls bar */
+.ctrl-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--card-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  flex-wrap: wrap;
+}
+
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  flex: 1;
+  min-width: 100px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  text-align: left;
+}
+
+.toggle-btn:hover {
+  background: rgba(var(--primary-color-rgb), 0.06);
+  border-color: rgba(var(--primary-color-rgb), 0.3);
+}
+
+.toggle-btn.active {
+  background: rgba(var(--primary-color-rgb), 0.12);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* Custom toggle track */
+.toggle-track {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--border-color);
+  flex-shrink: 0;
+  transition: background 0.25s;
+}
+
+.toggle-btn.active .toggle-track {
+  background: var(--primary-color);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.toggle-btn.active .toggle-thumb {
+  transform: translateX(16px);
+}
+
+.ctrl-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.next-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 18px;
+  border-radius: 8px;
+  background: var(--primary-color);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.next-btn:hover { opacity: 0.88; }
+.next-btn:active { transform: scale(0.96); }
+
+/* Source bar */
+.source-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--card-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  min-width: 0;
+}
+
+.source-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.source-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(var(--primary-color-rgb), 0.6);
+}
+
+.source-url {
+  font-size: 0.78rem;
+  font-family: ui-monospace, monospace;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 7px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.copy-btn.copied {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background: rgba(var(--primary-color-rgb), 0.1);
+}
+
+/* Transition */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>

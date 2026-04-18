@@ -57,9 +57,9 @@ def main(cfg: DictConfig):
 
         class APIKeyMiddleware(BaseHTTPMiddleware):
             async def dispatch(self, request: Request, call_next):
-                # 静态文件和 index.html 不需要认证
                 path = request.url.path
-                if not path.startswith("/api/"):
+                # 静态文件、index.html、img_proxy 不需要认证
+                if not path.startswith("/api/") or path.startswith("/api/v1/img_proxy"):
                     return await call_next(request)
                 key = request.headers.get("X-API-Key") or request.query_params.get("api_key")
                 if key != cfg.app.api_key:
